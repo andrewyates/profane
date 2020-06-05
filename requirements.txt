@@ -1,6 +1,6 @@
 colorama
 docopt
-numpy
+numpy>=1.17
 psycopg2-binary
 pytest
 sqlalchemy
