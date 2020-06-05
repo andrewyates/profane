@@ -28,7 +28,7 @@ setuptools.setup(
     version=profane_version,
     author="Andrew Yates",
     author_email="",
-    description="A library for configuring complex experimental pipelies",
+    description="A library for creating complex experimental pipelines",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/andrewyates/profane",
