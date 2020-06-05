@@ -127,8 +127,8 @@ class ConfigOption:
 
         if self.type == bool:
             self.type = lambda x: str(x).lower() == "true"
-        # if self.type == type(None):
-        #    self.type = lambda x: None if x.lower() == "none" else x
+        if self.type in [str, type(None)]:
+            self.type = lambda x: None if str(x).lower() == "none" else str(x)
         if self.type in [list, tuple]:
             self.type = lambda x: tuple(x.split(","))
 

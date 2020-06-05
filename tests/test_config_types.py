@@ -21,11 +21,10 @@ def test_types():
             ConfigOption(key="bool1", default_value=False),
             ConfigOption(key="bool2", default_value="false", value_type=bool),
             ConfigOption(key="bool3", default_value="true", value_type=bool),
+            ConfigOption(key="none-or-str", default_value=None),
         ]
 
     foo = ModuleFoo()
-    print(foo.config)
-    print([(x.key, x.type) for x in ModuleFoo.config_spec])
     assert type(foo.config["str1"]) == str
     assert type(foo.config["str2"]) == str
     assert type(foo.config["int1"]) == int
@@ -37,7 +36,12 @@ def test_types():
     assert foo.config["list2"] == ("a", "b", "c")
     assert type(foo.config["list1"]) == tuple
     assert type(foo.config["list2"]) == tuple
+    assert type(foo.config["none-or-str"]) == type(None)
 
     assert foo.config["bool1"] is False
     assert foo.config["bool2"] is False
     assert foo.config["bool3"] is True
+
+    foo = ModuleFoo({"none-or-str": "str"})
+    assert type(foo.config["none-or-str"]) == str
+    assert foo.config["none-or-str"] == "str"
