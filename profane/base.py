@@ -236,6 +236,9 @@ class ModuleBase:
         if not provide:
             provide = {}
 
+        # make a copy so we don't modify the object that was passed
+        config = config.copy()
+
         config["name"] = self.module_name
         self._set_random_seed(config)
         self.config = self._validate_config(config)
