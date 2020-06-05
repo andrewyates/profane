@@ -224,7 +224,7 @@ class ModuleBase:
         """ Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account. """
         return cls(config, provide=provide, share_dependency_objects=False).config
 
-    def __init__(self, config=None, provide=None, share_dependency_objects=False):
+    def __init__(self, config=None, provide=None, share_dependency_objects=False, build=True):
         if isinstance(config, FrozenDict):
             config = config._as_dict()
 
@@ -243,6 +243,9 @@ class ModuleBase:
         self._instantiate_dependencies(self.config, provide, share_dependency_objects)
         # freeze config
         self.config = FrozenDict(self.config)
+
+        if build and hasattr(self, "build"):
+            self.build()
 
     def _instantiate_dependencies(self, config, provide, share_objects):
         dependencies = {}
