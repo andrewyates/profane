@@ -1,0 +1,7 @@
+colorama
+docopt
+numpy
+psycopg2-binary
+pytest
+sqlalchemy
+sqlalchemy-utils
