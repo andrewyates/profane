@@ -7,6 +7,7 @@ from profane.sql import DBManager
 __version__ = "0.1.1"
 
 constants = profane.base.constants
+module_registry = profane.base.module_registry
 import_all_modules = profane.base.import_all_modules
 Dependency = profane.base.Dependency
 ConfigOption = profane.base.ConfigOption
