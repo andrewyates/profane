@@ -5,7 +5,6 @@ import random
 from glob import glob
 from pathlib import Path
 
-import numpy as np
 from colorama import Style, Fore
 
 from profane.exceptions import PipelineConstructionError, InvalidConfigError, InvalidModuleError
@@ -327,9 +326,15 @@ class ModuleBase:
         if "RANDOM_SEED" not in constants:
             constants["RANDOM_SEED"] = int(config.get("seed", _DEFAULT_RANDOM_SEED))
             random.seed(constants["RANDOM_SEED"])
-            np.random.seed(constants["RANDOM_SEED"])
-            self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
-            # TODO seed pytorch/tf in the appropriate trainers
+
+            try:
+                import numpy as np
+
+                np.random.seed(constants["RANDOM_SEED"])
+                self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
+            except ModuleNotFoundError:
+                # numpy is not available
+                self.rng = None
 
         config["seed"] = constants["RANDOM_SEED"]
 

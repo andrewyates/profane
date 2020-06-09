@@ -33,7 +33,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/andrewyates/profane",
     packages=setuptools.find_packages(),
-    install_requires=["colorama", "docopt", "numpy>=1.17", "sqlalchemy", "sqlalchemy-utils"],
+    install_requires=["colorama", "docopt", "sqlalchemy", "sqlalchemy-utils"],
     classifiers=["Programming Language :: Python :: 3", "Operating System :: OS Independent"],
     python_requires=">=3.6",
     cmdclass={"develop": PostDevelopCommand, "install": PostInstallCommand},
