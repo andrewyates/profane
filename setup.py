@@ -1,9 +1,8 @@
+import os
 import setuptools
 from setuptools import setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
-
-from profane import __version__ as profane_version
 
 
 class PostDevelopCommand(develop):
@@ -23,9 +22,25 @@ class PostInstallCommand(install):
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+# from https://packaging.python.org/guides/single-sourcing-package-version/
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, rel_path), "rt") as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith("__version__"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
+
+
 setuptools.setup(
     name="profane",
-    version=profane_version,
+    version=get_version("profane/__init__.py"),
     author="Andrew Yates",
     author_email="",
     description="A library for creating complex experimental pipelines",
