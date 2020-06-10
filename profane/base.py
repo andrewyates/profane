@@ -195,7 +195,10 @@ class ModuleBase:
                 # if config["seed"] != constants.RANDOM_SEED:
                 #    raise InvalidConfigError(f"seed={config[key]} does not match constants.RANDOM_SEED={constants.RANDOM_SEED}")
             elif key in dependencies:
-                pass
+                if isinstance(config[key], str):
+                    raise InvalidConfigError(
+                        f"invalid option: '{key}={config[key]}' ... maybe you meant: '{key}.name={config[key]}'"
+                    )
             elif key not in options:
                 raise InvalidConfigError(f"received unknown config key: {key}")
             else:
@@ -288,6 +291,7 @@ class ModuleBase:
             # if not, we need to instantiate the dependency
             # apply any config overrides
             dependency_config = dependency.default_config_overrides.copy()
+
             # apply any config options we received
             for k, v in config.get(dependency.key, {}).items():
                 dependency_config[k] = v
