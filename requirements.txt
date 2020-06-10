@@ -1,5 +1,6 @@
 colorama
 docopt
+numpy>=1.17
 pytest
 sqlalchemy
 sqlalchemy-utils

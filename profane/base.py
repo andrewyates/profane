@@ -7,6 +7,7 @@ from pathlib import Path
 
 from colorama import Style, Fore
 
+from profane.cli import convert_list_to_string, convert_string_to_list
 from profane.exceptions import PipelineConstructionError, InvalidConfigError, InvalidModuleError
 from profane.frozendict import FrozenDict
 import profane.constants as constants
@@ -129,26 +130,20 @@ class ConfigOption:
         elif self.type in [str, type(None)]:
             self.type = lambda x: None if str(x).lower() == "none" else str(x)
         elif self.type == "strlist":
-            self.type = lambda x: self._convert_to_list(x, str)
+            self.type = lambda x: convert_string_to_list(x, str)
         elif self.type == "intlist":
-            self.type = lambda x: self._convert_to_list(x, int)
+            self.type = lambda x: convert_string_to_list(x, int)
         elif self.type == "floatlist":
-            self.type = lambda x: self._convert_to_list(x, float)
-        if self.type in [list, tuple]:
+            self.type = lambda x: convert_string_to_list(x, float)
+        elif self.type in [list, tuple]:
             raise InvalidModuleError(
                 "ConfigOptions with a default_value of list must set value_type to one of: 'strlist', 'intlist', 'floatlist'"
             )
 
-    @staticmethod
-    def _convert_to_list(values, item_type):
-        if isinstance(values, str):
-            values = values.split(",")
-        elif isinstance(values, (tuple, list)):
-            pass
+        if value_type in ("strlist", "intlist", "floatlist"):
+            self.unexpanded_type = convert_list_to_string
         else:
-            values = [values]
-
-        return tuple(item_type(item) for item in values)
+            self.unexpanded_type = str
 
 
 class ModuleBase:
@@ -178,8 +173,10 @@ class ModuleBase:
         return cls
 
     @classmethod
-    def _validate_config(cls, config):
-        """ Validates `config` and raises an exception if any option present is not recognized or is the wrong type """
+    def _validate_and_cast_config(cls, config):
+        """ Validates `config` and casts values to their correct types.
+            Reraises an exception if any option present is not recognized or is incompatible with its type.
+        """
 
         options = {option.key: option for option in cls.config_spec}
         dependencies = set(dependency.key for dependency in cls.dependencies)
@@ -213,6 +210,26 @@ class ModuleBase:
             if option.key not in config:
                 config[option.key] = option.type(option.default_value)
         return config
+
+    @classmethod
+    def _unexpand_config_list_types(cls, config):
+        """ Unexpands list types in config so that they're represented as strings """
+
+        options = {option.key: option for option in cls.config_spec}
+        dependencies = set(dependency.key for dependency in cls.dependencies)
+
+        unexpanded_config = {}
+        for key in config:
+            if key in dependencies:
+                continue
+            elif key == "name" or key == "seed":
+                val = config[key]
+            else:
+                val = options[key].unexpanded_type(config[key])
+
+            unexpanded_config[key] = val
+
+        return unexpanded_config
 
     @classmethod
     def create(cls, name, config=None, provide=None, share_objects=True):
@@ -262,8 +279,9 @@ class ModuleBase:
 
         config["name"] = self.module_name
         self._set_random_seed(config)
-        self.config = self._validate_config(config)
+        self.config = self._validate_and_cast_config(config)
         self.config = self._fill_in_default_config_options(self.config)
+        self._unexpanded_config = self._unexpand_config_list_types(self.config)
         self._instantiate_dependencies(self.config, provide, share_dependency_objects)
         # freeze config
         self.config = FrozenDict(self.config)
@@ -383,7 +401,9 @@ class ModuleBase:
         """ Return a path encoding only the module's config (and not its dependencies) """
 
         module_cfg = {
-            k: v for k, v in self.config.items() if k not in self._dependency_objects and k not in self.config_keys_not_in_path
+            k: self._unexpanded_config[k]
+            for k in self.config
+            if k not in self._dependency_objects and k not in self.config_keys_not_in_path
         }
         module_name_key = self.module_type + "-" + module_cfg.pop("name")
         return "_".join([module_name_key] + [f"{k}-{v}" for k, v in sorted(module_cfg.items())])
@@ -419,7 +439,7 @@ class ModuleBase:
                 color = ""
                 if self.config[key] != options[key].default_value:
                     color = Fore.GREEN
-                lines.append(f"{color}{prefix}{key} = {self.config[key]}{Style.RESET_ALL}")
+                lines.append(f"{color}{prefix}{key} = {self._unexpanded_config[key]}{Style.RESET_ALL}")
 
 
 def import_all_modules(file, package):

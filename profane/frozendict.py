@@ -39,3 +39,5 @@ def _freeze_dicts(d):
     for k in list(d.keys()):
         if isinstance(d[k], dict):
             d[k] = FrozenDict(d[k])
+        elif isinstance(d[k], list):
+            d[k] = tuple(d[k])
