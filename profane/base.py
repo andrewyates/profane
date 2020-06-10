@@ -126,10 +126,29 @@ class ConfigOption:
 
         if self.type == bool:
             self.type = lambda x: str(x).lower() == "true"
-        if self.type in [str, type(None)]:
+        elif self.type in [str, type(None)]:
             self.type = lambda x: None if str(x).lower() == "none" else str(x)
+        elif self.type == "strlist":
+            self.type = lambda x: self._convert_to_list(x, str)
+        elif self.type == "intlist":
+            self.type = lambda x: self._convert_to_list(x, int)
+        elif self.type == "floatlist":
+            self.type = lambda x: self._convert_to_list(x, float)
         if self.type in [list, tuple]:
-            self.type = lambda x: tuple(x.split(","))
+            raise InvalidModuleError(
+                "ConfigOptions with a default_value of list must set value_type to one of: 'strlist', 'intlist', 'floatlist'"
+            )
+
+    @staticmethod
+    def _convert_to_list(values, item_type):
+        if isinstance(values, str):
+            values = values.split(",")
+        elif isinstance(values, (tuple, list)):
+            pass
+        else:
+            values = [values]
+
+        return tuple(item_type(item) for item in values)
 
 
 class ModuleBase:
