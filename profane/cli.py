@@ -73,6 +73,8 @@ def _parse_string_as_range(s, item_type):
 
 def convert_list_to_string(lst):
     # check whether we can represent lst as "start..stop,step"
+    lst = _unite_list_type(lst)
+
     if len(lst) > 2 and (all(isinstance(x, float) for x in lst) or all(isinstance(x, int) for x in lst)):
         if all(isinstance(x, int) for x in lst):
             precision = 0
@@ -91,8 +93,31 @@ def convert_list_to_string(lst):
             start = round(lst[0], precision)
             stop = round(lst[-1] + step, precision)
             return f"{start}..{stop},{step}"
+        else:
+            lst = [int(x) if int(x) == x else x for x in lst]  # convert unnecessary float into int
 
     return ",".join(str(item) for item in lst)
+
+
+def _unite_list_type(lst):
+    # convert hybrid-type lst into single-type lst
+
+    if any(isinstance(x, str) for x in lst):
+        if not all(isinstance(x, str) for x in lst):
+            return [str(x) for x in lst]
+        return lst
+
+    if all(isinstance(x, float) for x in lst):
+        return lst
+
+    if all(isinstance(x, int) for x in lst):
+        return lst
+
+    # lst is a mix of int and float
+    convert_to_float = any(int(x) != x for x in lst)
+    to_type = float if convert_to_float else int
+
+    return [to_type(x) for x in lst]
 
 
 def _rounding_precision(x):

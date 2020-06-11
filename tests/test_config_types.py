@@ -85,6 +85,8 @@ def test_convert_list_to_string():
 
     assert convert_list_to_string([1, 3, 4]) == "1,3,4"
     assert convert_list_to_string([1, 3, 4.9999]) == "1,3,4.9999"
+    assert convert_list_to_string([1.0, 3, 4.9999]) == "1,3,4.9999"
+    assert convert_list_to_string([1.001, 3, 4.9999]) == "1.001,3,4.9999"
 
     assert convert_list_to_string([1, 3]) == "1,3"
     assert convert_list_to_string([1.0, 3.0]) == "1.0,3.0"
@@ -95,3 +97,6 @@ def test_convert_list_to_string():
     assert convert_list_to_string(["1"]) == "1"
     assert convert_list_to_string(["1", "2"]) == "1,2"
     assert convert_list_to_string(["1", "2", "3", "4"]) == "1,2,3,4"
+
+    assert convert_list_to_string([1, 2, 3.0]) == "1..4,1"
+    assert convert_list_to_string([1.5, 2, 2.5]) == "1.5..3.0,0.5"
