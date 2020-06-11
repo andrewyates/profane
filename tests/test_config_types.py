@@ -1,7 +1,7 @@
 import pytest
 
 from profane.base import ModuleBase, PipelineConstructionError, ConfigOption, InvalidConfigError, Dependency, module_registry
-from profane.cli import convert_string_to_list, convert_list_to_string
+from profane.config_option import convert_string_to_list, convert_list_to_string
 
 
 def test_types():
