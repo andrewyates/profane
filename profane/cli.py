@@ -71,53 +71,32 @@ def _parse_string_as_range(s, item_type):
     raise ValueError(f"unsupported type: {item_type}")
 
 
-def convert_list_to_string(lst):
-    # check whether we can represent lst as "start..stop,step"
-    lst = _unite_list_type(lst)
+def convert_list_to_string(lst, item_type):
+    lst = [item_type(x) for x in lst]
 
-    if len(lst) > 2 and (all(isinstance(x, float) for x in lst) or all(isinstance(x, int) for x in lst)):
-        if all(isinstance(x, int) for x in lst):
+    # check whether we can represent lst as "start..stop,step"
+    if len(lst) > 2 and item_type in (float, int):
+        # for floating point lists, determine the number of significant digits to keep based on the user's input
+        # e.g., 1.01 --> 2 or 3e-05 --> 5; this is necessary to avoid floating point weirdness when adding step
+        if item_type == int:
             precision = 0
         else:
             precision = max(_rounding_precision(x) for x in lst)
 
+        # is the distance between successive list elements always the same as the distance between the first two elements?
         step = round(lst[1] - lst[0], precision)
-
-        is_range = True
-        for idx in range(len(lst) - 1):
-            if lst[idx + 1] != round(lst[idx] + step, precision):
-                is_range = False
-                break
+        is_range = all(lst[idx + 1] == round(lst[idx] + step, precision) for idx in range(len(lst) - 1))
 
         if is_range:
             start = round(lst[0], precision)
             stop = round(lst[-1] + step, precision)
+
+            start, stop, step = _unnecessary_floats_to_ints([start, stop, step])
             return f"{start}..{stop},{step}"
         else:
-            lst = [int(x) if int(x) == x else x for x in lst]  # convert unnecessary float into int
+            lst = _unnecessary_floats_to_ints(lst)
 
     return ",".join(str(item) for item in lst)
-
-
-def _unite_list_type(lst):
-    # convert hybrid-type lst into single-type lst
-
-    if any(isinstance(x, str) for x in lst):
-        if not all(isinstance(x, str) for x in lst):
-            return [str(x) for x in lst]
-        return lst
-
-    if all(isinstance(x, float) for x in lst):
-        return lst
-
-    if all(isinstance(x, int) for x in lst):
-        return lst
-
-    # lst is a mix of int and float
-    convert_to_float = any(int(x) != x for x in lst)
-    to_type = float if convert_to_float else int
-
-    return [to_type(x) for x in lst]
 
 
 def _rounding_precision(x):
@@ -128,3 +107,7 @@ def _rounding_precision(x):
         return int(x.split("e-")[1])
 
     raise ValueError(f"cannot parse: {x}")
+
+
+def _unnecessary_floats_to_ints(lst):
+    return [int(x) if int(x) == x else x for x in lst]

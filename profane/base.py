@@ -3,7 +3,7 @@ import logging
 import os
 import random
 from glob import glob
-from pathlib import Path
+from functools import partial
 
 from colorama import Style, Fore
 
@@ -120,30 +120,34 @@ class ConfigOption:
         self.default_value = default_value
         self.description = description
 
-        if value_type is None:
-            self.type = type(self.default_value)
+        if value_type == "strlist":
+            self.unexpanded_type = partial(convert_list_to_string, item_type=str)
+        elif value_type == "intlist":
+            self.unexpanded_type = partial(convert_list_to_string, item_type=int)
+        elif value_type == "floatlist":
+            self.unexpanded_type = partial(convert_list_to_string, item_type=float)
         else:
-            self.type = value_type
+            self.unexpanded_type = str
 
-        if self.type == bool:
+        if value_type is None:
+            value_type = type(self.default_value)
+
+        if value_type == bool:
             self.type = lambda x: str(x).lower() == "true"
-        elif self.type in [str, type(None)]:
+        elif value_type in [str, type(None)]:
             self.type = lambda x: None if str(x).lower() == "none" else str(x)
-        elif self.type == "strlist":
-            self.type = lambda x: convert_string_to_list(x, str)
-        elif self.type == "intlist":
-            self.type = lambda x: convert_string_to_list(x, int)
-        elif self.type == "floatlist":
-            self.type = lambda x: convert_string_to_list(x, float)
-        elif self.type in [list, tuple]:
+        elif value_type == "strlist":
+            self.type = partial(convert_string_to_list, item_type=str)
+        elif value_type == "intlist":
+            self.type = partial(convert_string_to_list, item_type=int)
+        elif value_type == "floatlist":
+            self.type = partial(convert_string_to_list, item_type=float)
+        elif value_type in [list, tuple]:
             raise InvalidModuleError(
                 "ConfigOptions with a default_value of list must set value_type to one of: 'strlist', 'intlist', 'floatlist'"
             )
-
-        if value_type in ("strlist", "intlist", "floatlist"):
-            self.unexpanded_type = convert_list_to_string
         else:
-            self.unexpanded_type = str
+            self.type = value_type
 
 
 class ModuleBase:
