@@ -1,6 +1,7 @@
 import pytest
 
-from profane.base import ModuleBase, PipelineConstructionError, ConfigOption, InvalidConfigError, Dependency, module_registry
+from profane.base import ModuleBase, PipelineConstructionError, InvalidConfigError, Dependency, module_registry
+from profane.config_option import ConfigOption, convert_string_to_list, convert_list_to_string
 
 
 def test_types():
@@ -56,3 +57,51 @@ def test_types():
     foo = ModuleFoo({"none-or-str": "str"})
     assert type(foo.config["none-or-str"]) == str
     assert foo.config["none-or-str"] == "str"
+
+
+def test_convert_string_to_list():
+    # test typed conversions
+    assert convert_string_to_list("1,2", int) == (1, 2)
+    assert convert_string_to_list("1", int) == (1,)
+    assert convert_string_to_list("1.1,1.2", float) == (1.1, 1.2)
+    assert convert_string_to_list("1.1", float) == (1.1,)
+    assert convert_string_to_list("1,2", str) == ("1", "2")
+    assert convert_string_to_list("1", str) == ("1",)
+
+    # test range conversions
+    assert convert_string_to_list("1..4,1", int) == (1, 2, 3)
+    assert convert_string_to_list("1..4,0.5", float) == (1, 1.5, 2, 2.5, 3, 3.5)
+    assert convert_string_to_list("0.00001..0.00002,2e-06", float) == (1e-05, 1.2e-05, 1.4e-05, 1.6e-05, 1.8e-05, 2e-05)
+
+    # test range checking endpoints
+    assert convert_string_to_list("1,2,3,4,6", int) == (1, 2, 3, 4, 6)
+    assert convert_string_to_list("0,2,3,4,5", int) == (0, 2, 3, 4, 5)
+
+    with pytest.raises(ValueError):
+        convert_string_to_list("1..4,1", str)
+
+    with pytest.raises(ValueError):
+        convert_string_to_list("3..1,1", int)
+
+
+def test_convert_list_to_string():
+    assert convert_list_to_string([1.1, 1.3, 1.5, 1.7], float) == "1.1..1.9,0.2"
+    assert convert_list_to_string([1, 3, 5], int) == "1..7,2"
+
+    assert convert_list_to_string([1, 3, 4], int) == "1,3,4"
+    assert convert_list_to_string([1, 3, 4.9999], float) == "1,3,4.9999"
+    assert convert_list_to_string([1.0, 3, 4.9999], float) == "1,3,4.9999"
+    assert convert_list_to_string([1.001, 3, 4.9999], float) == "1.001,3,4.9999"
+
+    assert convert_list_to_string([1, 3], int) == "1,3"
+    assert convert_list_to_string([1.0, 3.0], float) == "1.0,3.0"
+
+    assert convert_list_to_string([1], int) == "1"
+    assert convert_list_to_string([1.0], float) == "1.0"
+
+    assert convert_list_to_string(["1"], str) == "1"
+    assert convert_list_to_string(["1", "2"], str) == "1,2"
+    assert convert_list_to_string(["1", "2", "3", "4"], str) == "1,2,3,4"
+
+    assert convert_list_to_string([1, 2, 3.0], float) == "1..4,1"
+    assert convert_list_to_string([1.5, 2, 2.5], float) == "1.5..3,0.5"

@@ -3,10 +3,10 @@ import logging
 import os
 import random
 from glob import glob
-from pathlib import Path
 
 from colorama import Style, Fore
 
+from profane.config_option import ConfigOption
 from profane.exceptions import PipelineConstructionError, InvalidConfigError, InvalidModuleError
 from profane.frozendict import FrozenDict
 import profane.constants as constants
@@ -111,46 +111,6 @@ class Dependency:
         return f"<Dependency key={self.key} {self.module}={self.name} overrides={self.default_config_overrides} provide_this={self.provide_this} provide_children={self.provide_children}>"
 
 
-class ConfigOption:
-    """ Represents a config option required by a model. """
-
-    def __init__(self, key, default_value, description="", value_type=None):
-        self.key = key
-        self.default_value = default_value
-        self.description = description
-
-        if value_type is None:
-            self.type = type(self.default_value)
-        else:
-            self.type = value_type
-
-        if self.type == bool:
-            self.type = lambda x: str(x).lower() == "true"
-        elif self.type in [str, type(None)]:
-            self.type = lambda x: None if str(x).lower() == "none" else str(x)
-        elif self.type == "strlist":
-            self.type = lambda x: self._convert_to_list(x, str)
-        elif self.type == "intlist":
-            self.type = lambda x: self._convert_to_list(x, int)
-        elif self.type == "floatlist":
-            self.type = lambda x: self._convert_to_list(x, float)
-        if self.type in [list, tuple]:
-            raise InvalidModuleError(
-                "ConfigOptions with a default_value of list must set value_type to one of: 'strlist', 'intlist', 'floatlist'"
-            )
-
-    @staticmethod
-    def _convert_to_list(values, item_type):
-        if isinstance(values, str):
-            values = values.split(",")
-        elif isinstance(values, (tuple, list)):
-            pass
-        else:
-            values = [values]
-
-        return tuple(item_type(item) for item in values)
-
-
 class ModuleBase:
     """ Base class for profane modules.
         Module construction proceeds as follows:
@@ -178,8 +138,10 @@ class ModuleBase:
         return cls
 
     @classmethod
-    def _validate_config(cls, config):
-        """ Validates `config` and raises an exception if any option present is not recognized or is the wrong type """
+    def _validate_and_cast_config(cls, config):
+        """ Validates `config` and casts values to their correct types.
+            Reraises an exception if any option present is not recognized or is incompatible with its type.
+        """
 
         options = {option.key: option for option in cls.config_spec}
         dependencies = set(dependency.key for dependency in cls.dependencies)
@@ -213,6 +175,27 @@ class ModuleBase:
             if option.key not in config:
                 config[option.key] = option.type(option.default_value)
         return config
+
+    @classmethod
+    def _config_values_to_strings(cls, config):
+        """ Converts config values to strings that can be shown to the user """
+
+        options = {option.key: option for option in cls.config_spec}
+        dependencies = set(dependency.key for dependency in cls.dependencies)
+
+        config_as_strings = {}
+        for key in config:
+            if key in dependencies:
+                continue
+            elif key == "name" or key == "seed":
+                val = config[key]
+            else:
+                val = options[key].string_representation(config[key])
+                assert options[key].type(val) == config[key], "string_representation is symmetric"
+
+            config_as_strings[key] = val
+
+        return config_as_strings
 
     @classmethod
     def create(cls, name, config=None, provide=None, share_objects=True):
@@ -262,8 +245,9 @@ class ModuleBase:
 
         config["name"] = self.module_name
         self._set_random_seed(config)
-        self.config = self._validate_config(config)
+        self.config = self._validate_and_cast_config(config)
         self.config = self._fill_in_default_config_options(self.config)
+        self._config_as_strings = self._config_values_to_strings(self.config)
         self._instantiate_dependencies(self.config, provide, share_dependency_objects)
         # freeze config
         self.config = FrozenDict(self.config)
@@ -383,7 +367,9 @@ class ModuleBase:
         """ Return a path encoding only the module's config (and not its dependencies) """
 
         module_cfg = {
-            k: v for k, v in self.config.items() if k not in self._dependency_objects and k not in self.config_keys_not_in_path
+            k: self._config_as_strings[k]
+            for k in self.config
+            if k not in self._dependency_objects and k not in self.config_keys_not_in_path
         }
         module_name_key = self.module_type + "-" + module_cfg.pop("name")
         return "_".join([module_name_key] + [f"{k}-{v}" for k, v in sorted(module_cfg.items())])
@@ -419,7 +405,7 @@ class ModuleBase:
                 color = ""
                 if self.config[key] != options[key].default_value:
                     color = Fore.GREEN
-                lines.append(f"{color}{prefix}{key} = {self.config[key]}{Style.RESET_ALL}")
+                lines.append(f"{color}{prefix}{key} = {self._config_as_strings[key]}{Style.RESET_ALL}")
 
 
 def import_all_modules(file, package):

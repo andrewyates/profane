@@ -1,6 +1,7 @@
 import pytest
 
-from profane.base import ModuleBase, PipelineConstructionError, ConfigOption, InvalidConfigError, Dependency, module_registry
+from profane.base import ModuleBase, PipelineConstructionError, InvalidConfigError, Dependency, module_registry
+from profane.config_option import ConfigOption
 
 
 @pytest.fixture
