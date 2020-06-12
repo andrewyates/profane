@@ -1,4 +1,8 @@
+import random
 import pytest
+import numpy as np
+from hypothesis import given
+from hypothesis.strategies import lists, integers, floats, composite
 
 from profane.base import ModuleBase, PipelineConstructionError, InvalidConfigError, Dependency, module_registry
 from profane.config_option import ConfigOption, convert_string_to_list, convert_list_to_string
@@ -106,3 +110,47 @@ def test_convert_list_to_string():
 
     assert convert_list_to_string([1, 2, 3.0], float) == "1..4,1"
     assert convert_list_to_string([1.5, 2, 2.5], float) == "1.5..3,0.5"
+
+
+@given(lst=lists(elements=integers(min_value=0, max_value=100), min_size=1, max_size=10, unique=True))
+def test_string_list_inversion_int(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, int), int)
+
+
+@given(lst=lists(elements=floats(min_value=0.0, max_value=5), min_size=1, max_size=10, unique=True))
+def test_string_list_inversion_float(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, float), float)
+
+
+@composite
+def arithmetic_sequence(draw, dtype):
+    if dtype == "int":
+        start = random.randint(0, 3)
+        end = start + random.randint(1, 10)
+        step = random.randint(1, 3)
+    elif dtype == "float":
+        if random.random() < 0.5:
+            start = random.uniform(0.0, 1.0, 0.01)
+            end = start + random.uniform(1.0, 3.0, 0.01)
+            step = random.uniform(0.01, 0.51)
+        else:
+            start = random.uniform(0.0, 1.0)
+            end = start + random.uniform(0.0002, 0.0001)
+            step = random.uniform(0.0001, 0.0005)
+    else:
+        raise ValueError(f"Unexpected dtype {dtype}")
+
+    lst = np.arange(start, end, step)
+    assert len(lst) > 0
+    return lst
+
+
+@given(arithmetic_sequence(dtype="int"))
+def test_string_list_inversion_int_AS(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, int), int)
+
+
+@given(arithmetic_sequence(dtype="float"))
+def test_string_list_inversion_float_AS(lst):
+
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, float), float)
