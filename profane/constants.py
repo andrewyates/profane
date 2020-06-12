@@ -13,7 +13,7 @@ class ConstantsRegistry:
         return self._d[key]
 
     def __setitem__(self, key, val):
-        if key in self._d:
+        if key in self._d and self._d[key] != val:
             raise TypeError(
                 f"ConstantsRegistry does not support re-assignment of existing entries; already contains: {key}={self._d[key]}"
             )
