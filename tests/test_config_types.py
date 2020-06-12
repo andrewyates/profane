@@ -1,4 +1,8 @@
+import random
 import pytest
+import numpy as np
+from hypothesis import given
+from hypothesis.strategies import lists, integers, floats, composite
 
 from profane.base import ModuleBase, PipelineConstructionError, InvalidConfigError, Dependency, module_registry
 from profane.config_option import ConfigOption, convert_string_to_list, convert_list_to_string
@@ -106,3 +110,46 @@ def test_convert_list_to_string():
 
     assert convert_list_to_string([1, 2, 3.0], float) == "1..4,1"
     assert convert_list_to_string([1.5, 2, 2.5], float) == "1.5..3,0.5"
+
+
+@composite
+def arithmetic_sequence(draw, dtype):
+    if dtype == "int":
+        start = draw(integers(min_value=0, max_value=3))
+        end = start + draw(integers(min_value=1, max_value=10))
+        step = draw(integers(min_value=1, max_value=3))
+    elif dtype == "float":
+        if random.random() < 0.5:
+            start = draw(floats(min_value=0.0, max_value=1.0))  # step=0.01
+            end = start + draw(floats(min_value=1.0, max_value=3.0))  # , 0.01)
+            step = draw(floats(min_value=0.01, max_value=0.51))
+        else:
+            start = draw(floats(min_value=0.0, max_value=1.0))
+            end = start + draw(floats(min_value=0.0001, max_value=0.002))
+            step = draw(floats(min_value=0.0001, max_value=0.0005))
+    else:
+        raise ValueError(f"Unexpected dtype {dtype}")
+
+    lst = np.around(np.arange(start, end, step), decimals=4).tolist()
+    assert len(lst) > 0
+    return lst
+
+
+@given(lst=lists(elements=integers(min_value=0, max_value=100), min_size=1, max_size=10, unique=True))
+def test_string_list_inversion_random_int(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, int), int)
+
+
+@given(lst=lists(elements=floats(min_value=0.0, max_value=5), min_size=1, max_size=10, unique=True))
+def test_string_list_inversion_random_float(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, float), float)
+
+
+@given(arithmetic_sequence(dtype="int"))
+def test_string_list_inversion_arithmetic_int(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, int), int)
+
+
+@given(arithmetic_sequence(dtype="float"))
+def test_string_list_inversion_arithmetic_float(lst):
+    assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, float), float)
