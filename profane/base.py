@@ -191,7 +191,13 @@ class ModuleBase:
                 val = config[key]
             else:
                 val = options[key].string_representation(config[key])
-                assert options[key].type(val) == config[key], "string_representation is symmetric"
+
+                reconverted_typed_value = options[key].type(val)
+                current_typed_value = config[key]
+                if current_typed_value != reconverted_typed_value:
+                    raise RuntimeError(
+                        f"value changed during type conversion: '{current_typed_value}' became '{reconverted_typed_value}'"
+                    )
 
             config_as_strings[key] = val
 
