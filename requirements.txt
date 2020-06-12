@@ -1,5 +1,6 @@
 colorama
 docopt
+hypothesis
 numpy>=1.17
 pytest
 sqlalchemy
