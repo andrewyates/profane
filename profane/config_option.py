@@ -91,7 +91,10 @@ def _parse_string_as_range(s, item_type):
         return list(range(start, stop, step))
     elif item_type == float:
         precision = max(_rounding_precision(x) for x in (start, stop, step))
-        return [round(item, precision) for item in np.arange(start, stop, step)]
+        lst = [round(item, precision) for item in np.arange(start, stop, step)]
+        if lst[-1] == stop:
+            del lst[-1]
+        return lst
 
     raise ValueError(f"unsupported type: {item_type}")
 

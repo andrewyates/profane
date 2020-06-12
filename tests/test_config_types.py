@@ -71,7 +71,8 @@ def test_convert_string_to_list():
     # test range conversions
     assert convert_string_to_list("1..4,1", int) == (1, 2, 3)
     assert convert_string_to_list("1..4,0.5", float) == (1, 1.5, 2, 2.5, 3, 3.5)
-    assert convert_string_to_list("0.00001..0.00002,2e-06", float) == (1e-05, 1.2e-05, 1.4e-05, 1.6e-05, 1.8e-05, 2e-05)
+    assert convert_string_to_list("0.65..0.8,0.05", float) == (0.65, 0.7, 0.75)
+    assert convert_string_to_list("0.00001..0.00002,2e-06", float) == (1e-05, 1.2e-05, 1.4e-05, 1.6e-05, 1.8e-05)
 
     # test range checking endpoints
     assert convert_string_to_list("1,2,3,4,6", int) == (1, 2, 3, 4, 6)
