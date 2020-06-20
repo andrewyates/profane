@@ -20,8 +20,10 @@ def _dot_to_dict(d, k, v):
         _dot_to_dict(d[current_k], remaining_path, v)
     elif k == "file":
         with open(v, "rt") as f:
-            for new_k, new_v in _config_list_to_pairs([line for line in f]):
-                _dot_to_dict(d, new_k, new_v)
+            pairs = [pair for line in f for pair in line.strip().split(" ")]
+
+        for new_k, new_v in _config_list_to_pairs(pairs):
+            _dot_to_dict(d, new_k, new_v)
     else:
         d[k] = v
 
@@ -30,6 +32,10 @@ def _config_list_to_pairs(l):
     pairs = []
     for kv in l:
         kv = kv.strip()
+
+        if len(kv) == 0:
+            continue
+
         if kv.count("=") != 1:
             raise ValueError(f"invalid 'key=value' pair: {kv}")
 

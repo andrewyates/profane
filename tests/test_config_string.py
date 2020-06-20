@@ -35,8 +35,7 @@ def test_config_string_with_files_to_dict(tmpdir):
 
     foofn = os.path.join(tmpdir, "foo.txt")
     with open(foofn, "wt") as f:
-        print("test1=20", file=f)
-        print("submod1.test1=21", file=f)
+        print("test1=20  submod1.test1=21 ", file=f)
         print("submod1.submod2.test1=22", file=f)
         print("test3=extra", file=f)
         print(f"file={mainfn}", file=f)
