@@ -38,7 +38,7 @@ def test_config_string_with_files_to_dict(tmpdir):
         print("test1=20  submod1.test1=21 ", file=f)
         print("submod1.submod2.test1=22", file=f)
         print("test3=extra", file=f)
-        print(f"file={mainfn}", file=f)
+        print(f"FILE={mainfn}", file=f)
 
     args = ["foo.test1=1", f"foo.file={foofn}", "main=42", f"file={mainfn}"]
     assert config_list_to_dict(args) == {

@@ -18,7 +18,7 @@ def _dot_to_dict(d, k, v):
 
         d.setdefault(current_k, {})
         _dot_to_dict(d[current_k], remaining_path, v)
-    elif k == "file":
+    elif k.lower() == "file":
         with open(v, "rt") as f:
             pairs = [pair for line in f for pair in line.strip().split(" ")]
 
