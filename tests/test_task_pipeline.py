@@ -51,6 +51,21 @@ def rank_modules():
             Dependency(key="searcher", module="searcher", name="bm25"),
         ]
 
+    @Task.register
+    class RerankTask(Task):
+        module_name = "rerank"
+        config_spec = [
+            ConfigOption("fold", "s1", "fold to run"),
+            ConfigOption(
+                "optimize", "map", "metric to maximize on the dev set"
+            ),  # affects train() because we check to save weights
+        ]
+        dependencies = [
+            Dependency(key="benchmark", module="benchmark", name="rob04yang", provide_this=True, provide_children=["collection"]),
+            Dependency(key="rank", module="task", name="rank"),
+            Dependency(key="reranker", module="reranker", name="DRMM"),
+        ]
+
     @ModuleBase.register
     class BenchmarkRob04(ModuleBase):
         module_type = "benchmark"
@@ -89,11 +104,70 @@ def rank_modules():
         module_type = "collection"
         module_name = "msmarco"
 
-    return [ThreeRankTask, TwoRankTask, RankTask]
+    @ModuleBase.register
+    class ExtractorEmbedtext(ModuleBase):
+        module_type = "extractor"
+        module_name = "embedtext"
+
+        dependencies = [
+            Dependency(key="index", module="index", name="anserini", default_config_overrides={"stemmer": "none"}),
+            Dependency(key="tokenizer", module="tokenizer", name="anserini"),
+        ]
+        config_spec = [
+            ConfigOption("embeddings", "glove6b"),
+            ConfigOption("zerounk", False),
+            ConfigOption("calcidf", True),
+            ConfigOption("maxqlen", 4),
+            ConfigOption("maxdoclen", 800),
+            ConfigOption("usecache", False),
+        ]
+
+    @ModuleBase.register
+    class TokenizerAnserini(ModuleBase):
+        module_type = "tokenizer"
+        module_name = "anserini"
+        config_spec = [
+            ConfigOption("keepstops", True, "keep stopwords if True"),
+            ConfigOption("stemmer", "none", "stemmer: porter, krovetz, or none"),
+        ]
+
+    @ModuleBase.register
+    class TrainerPytorch(ModuleBase):
+        module_type = "trainer"
+        module_name = "pytorch"
+        config_spec = [
+            ConfigOption("batch", 32, "batch size"),
+            ConfigOption("niters", 20),
+            ConfigOption("itersize", 512),
+            ConfigOption("gradacc", 1),
+            ConfigOption("lr", 0.001),
+            ConfigOption("softmaxloss", False),
+            ConfigOption("fastforward", False),
+            ConfigOption("validatefreq", 1),
+            ConfigOption("boardname", "default"),
+        ]
+        config_keys_not_in_path = ["fastforward", "boardname"]
+
+    @ModuleBase.register
+    class RerankerDRMM(ModuleBase):
+        module_type = "reranker"
+        module_name = "DRMM"
+        dependencies = [
+            Dependency(key="extractor", module="extractor", name="embedtext"),
+            Dependency(key="trainer", module="trainer", name="pytorch"),
+        ]
+        config_spec = [
+            ConfigOption("nbins", 29, "number of bins in matching histogram"),
+            ConfigOption("nodes", 5, "hidden layer dimension for matching network"),
+            ConfigOption("histType", "LCH", "histogram type: CH, NH, LCH"),
+            ConfigOption("gateType", "IDF", "term gate type: TV or IDF"),
+        ]
+
+    return [ThreeRankTask, TwoRankTask, RankTask, RerankTask]
 
 
 def test_creation_with_simple_provide(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     # non-default collection should be set in both benchmark's and searcher's dependencies
     rank = RankTask({"benchmark": {"collection": {"name": "msmarco"}}})
@@ -103,7 +177,7 @@ def test_creation_with_simple_provide(rank_modules):
 
 
 def test_creation_with_complex_provide(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     # TwoRank task should provide same default benchmark to both Rank tasks
     tworank_default = TwoRankTask()
@@ -127,7 +201,7 @@ def test_creation_with_complex_provide(rank_modules):
 
 
 def test_creation_with_more_complex_provide(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     # this ThreeRank should provide a TwoRank with one benchmark and a Rank with a second (independent) benchmark
     threerank = ThreeRankTask({"tworank": {"benchmark": {"name": "rob04yang"}}, "rank3": {"benchmark": {"name": "trecdl"}}})
@@ -142,7 +216,7 @@ def test_creation_with_more_complex_provide(rank_modules):
 
 
 def test_creation_with_module_object_sharing(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     tworank_trecdl = TwoRankTask({"benchmark": {"name": "trecdl"}}, share_dependency_objects=True)
     # both Rank tasks should be identical and thus pointing to the same object
@@ -176,7 +250,7 @@ def test_creation_with_module_object_sharing(rank_modules):
 
 
 def test_module_path(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     rt = RankTask({"searcher": {"index": {"stemmer": "other"}}})
     assert (
@@ -185,6 +259,17 @@ def test_module_path(rank_modules):
     )
     assert rt.benchmark.get_module_path() == "collection-robust04/benchmark-rob04yang"
     assert rt.searcher.get_module_path() == "collection-robust04/index-anserini_stemmer-other/searcher-bm25_k1-1.0_seed-42"
+
+    rrt = RerankTask()
+    assert (
+        rrt.get_module_path()
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42/collection-robust04/index-anserini_stemmer-None/tokenizer-anserini_keepstops-True_stemmer-None/extractor-embedtext_calcidf-True_embeddings-glove6b_maxdoclen-800_maxqlen-4_usecache-False_zerounk-False/trainer-pytorch_batch-32_gradacc-1_itersize-512_lr-0.001_niters-20_softmaxloss-False_validatefreq-1/reranker-DRMM_gateType-IDF_histType-LCH_nbins-29_nodes-5/task-rerank_fold-s1_optimize-map_seed-42"
+    )
+    assert rrt.benchmark.get_module_path() == "collection-robust04/benchmark-rob04yang"
+    assert (
+        rrt.rank.get_module_path()
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
+    )
 
 
 def test_config_keys_not_in_module_path():
@@ -203,7 +288,7 @@ def test_config_keys_not_in_module_path():
 
 
 def test_config_seed_propagation(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     rt = RankTask({"seed": 123, "searcher": {"index": {"stemmer": "other"}}})
     assert rt.config["seed"] == 123
@@ -211,7 +296,7 @@ def test_config_seed_propagation(rank_modules):
 
 
 def test_config_seed_nonpropagation(rank_modules):
-    ThreeRankTask, TwoRankTask, RankTask = rank_modules
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     rt = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
     assert rt.config["seed"] == _DEFAULT_RANDOM_SEED
@@ -219,10 +304,19 @@ def test_config_seed_nonpropagation(rank_modules):
 
 
 def test_registry_enumeration(rank_modules):
-    assert module_registry.get_module_types() == ["benchmark", "collection", "index", "searcher", "task"]
-
+    assert module_registry.get_module_types() == [
+        "benchmark",
+        "collection",
+        "extractor",
+        "index",
+        "reranker",
+        "searcher",
+        "task",
+        "tokenizer",
+        "trainer",
+    ]
     assert module_registry.get_module_names("benchmark") == ["rob04yang", "trecdl"]
     assert module_registry.get_module_names("collection") == ["msmarco", "robust04"]
     assert module_registry.get_module_names("index") == ["anserini"]
     assert module_registry.get_module_names("searcher") == ["bm25"]
-    assert module_registry.get_module_names("task") == ["rank", "threerank", "tworank"]
+    assert module_registry.get_module_names("task") == ["rank", "rerank", "threerank", "tworank"]

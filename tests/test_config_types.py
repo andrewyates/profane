@@ -137,6 +137,7 @@ def arithmetic_sequence(draw, dtype):
 
 @given(lst=lists(elements=integers(min_value=0, max_value=100), min_size=1, max_size=10, unique=True))
 def test_string_list_inversion_random_int(lst):
+    lst = sorted(lst)
     assert tuple(lst) == convert_string_to_list(convert_list_to_string(lst, int), int)
 
 
