@@ -54,11 +54,13 @@ def rank_modules():
     @Task.register
     class RerankTask(Task):
         module_name = "rerank"
-        config_spec = [ 
+        config_spec = [
             ConfigOption("fold", "s1", "fold to run"),
-            ConfigOption("optimize", "map", "metric to maximize on the dev set"),  # affects train() because we check to save weights
+            ConfigOption(
+                "optimize", "map", "metric to maximize on the dev set"
+            ),  # affects train() because we check to save weights
         ]
-        dependencies = [ 
+        dependencies = [
             Dependency(key="benchmark", module="benchmark", name="rob04yang", provide_this=True, provide_children=["collection"]),
             Dependency(key="rank", module="task", name="rank"),
             Dependency(key="reranker", module="reranker", name="DRMM"),
@@ -133,7 +135,7 @@ def rank_modules():
     class TrainerPytorch(ModuleBase):
         module_type = "trainer"
         module_name = "pytorch"
-        config_spec = [ 
+        config_spec = [
             ConfigOption("batch", 32, "batch size"),
             ConfigOption("niters", 20),
             ConfigOption("itersize", 512),
@@ -150,18 +152,17 @@ def rank_modules():
     class RerankerDRMM(ModuleBase):
         module_type = "reranker"
         module_name = "DRMM"
-        dependencies = [ 
-            Dependency(key="extractor", module="extractor", name="embedtext"), 
-            Dependency(key="trainer", module="trainer", name="pytorch"), 
+        dependencies = [
+            Dependency(key="extractor", module="extractor", name="embedtext"),
+            Dependency(key="trainer", module="trainer", name="pytorch"),
         ]
-        config_spec = [ 
+        config_spec = [
             ConfigOption("nbins", 29, "number of bins in matching histogram"),
             ConfigOption("nodes", 5, "hidden layer dimension for matching network"),
             ConfigOption("histType", "LCH", "histogram type: CH, NH, LCH"),
-            ConfigOption("gateType", "IDF", "term gate type: TV or IDF"), 
+            ConfigOption("gateType", "IDF", "term gate type: TV or IDF"),
         ]
 
-        
     return [ThreeRankTask, TwoRankTask, RankTask, RerankTask]
 
 
@@ -260,9 +261,15 @@ def test_module_path(rank_modules):
     assert rt.searcher.get_module_path() == "collection-robust04/index-anserini_stemmer-other/searcher-bm25_k1-1.0_seed-42"
 
     rrt = RerankTask()
-    assert rrt.get_module_path() == "collection-robust04/benchmark-rob04yang/collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42/collection-robust04/index-anserini_stemmer-None/tokenizer-anserini_keepstops-True_stemmer-None/extractor-embedtext_calcidf-True_embeddings-glove6b_maxdoclen-800_maxqlen-4_usecache-False_zerounk-False/trainer-pytorch_batch-32_gradacc-1_itersize-512_lr-0.001_niters-20_softmaxloss-False_validatefreq-1/reranker-DRMM_gateType-IDF_histType-LCH_nbins-29_nodes-5/task-rerank_fold-s1_optimize-map_seed-42"
+    assert (
+        rrt.get_module_path()
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42/collection-robust04/index-anserini_stemmer-None/tokenizer-anserini_keepstops-True_stemmer-None/extractor-embedtext_calcidf-True_embeddings-glove6b_maxdoclen-800_maxqlen-4_usecache-False_zerounk-False/trainer-pytorch_batch-32_gradacc-1_itersize-512_lr-0.001_niters-20_softmaxloss-False_validatefreq-1/reranker-DRMM_gateType-IDF_histType-LCH_nbins-29_nodes-5/task-rerank_fold-s1_optimize-map_seed-42"
+    )
     assert rrt.benchmark.get_module_path() == "collection-robust04/benchmark-rob04yang"
-    assert rrt.rank.get_module_path() == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
+    assert (
+        rrt.rank.get_module_path()
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
+    )
 
 
 def test_config_keys_not_in_module_path():
@@ -298,7 +305,16 @@ def test_config_seed_nonpropagation(rank_modules):
 
 def test_registry_enumeration(rank_modules):
     assert module_registry.get_module_types() == [
-            "benchmark", "collection", "extractor", "index", "reranker", "searcher", "task", "tokenizer", "trainer"]
+        "benchmark",
+        "collection",
+        "extractor",
+        "index",
+        "reranker",
+        "searcher",
+        "task",
+        "tokenizer",
+        "trainer",
+    ]
     assert module_registry.get_module_names("benchmark") == ["rob04yang", "trecdl"]
     assert module_registry.get_module_names("collection") == ["msmarco", "robust04"]
     assert module_registry.get_module_names("index") == ["anserini"]
