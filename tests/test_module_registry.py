@@ -1,6 +1,6 @@
 import pytest
 
-from profane.base import InvalidModuleError, ModuleRegistry
+from profane.base import ModuleBase, InvalidModuleError, ModuleRegistry
 
 
 def test_module_registry():
@@ -9,10 +9,10 @@ def test_module_registry():
     with pytest.raises(ValueError):
         registry.lookup("missing_type", "missing_name")
 
-    class VeryIncompleteModule:
+    class VeryIncompleteModule(ModuleBase):
         pass
 
-    class HalfIncompleteModule:
+    class HalfIncompleteModule(ModuleBase):
         module_type = "incomplete"
 
     with pytest.raises(InvalidModuleError):
@@ -21,7 +21,7 @@ def test_module_registry():
     with pytest.raises(InvalidModuleError):
         registry.register(HalfIncompleteModule)
 
-    class MinimalRegisterableModule:
+    class MinimalRegisterableModule(ModuleBase):
         module_type = "minimal"
         module_name = "MRM"
 
@@ -34,3 +34,12 @@ def test_module_registry():
 
     with pytest.raises(ValueError):
         registry.lookup("missing", "MRM")
+
+    class WrongDependenciesTypeModule:
+        module_type = "wrongdependencies"
+        module_name = "WDTM"
+
+        dependencies = {}
+
+    with pytest.raises(TypeError):
+        registry.register(WrongDependenciesTypeModule)
