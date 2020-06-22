@@ -38,6 +38,9 @@ class ModuleRegistry:
         if not hasattr(cls, "module_name"):
             raise InvalidModuleError(f"missing module_name for class: {cls}")
 
+        if not isinstance(cls.dependencies, list):
+            raise TypeError(f"wrong type of dependencies for class {cls}, expect list but found {type(cls.dependencies)}")
+
         module_type_registry = self.registry.setdefault(cls.module_type, {})
 
         # do we already have a different entry for this module_type and module_name?
