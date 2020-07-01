@@ -26,6 +26,15 @@ class FrozenDict(collections.abc.Mapping):
     def __getitem__(self, key):
         return self._d[key]
 
+    def __eq__(self, other):
+        if isinstance(other, dict):
+            other = FrozenDict(other)
+
+        if not isinstance(other, FrozenDict):
+            return False
+
+        return self._d == other._d
+
     def __hash__(self):
         if self._hash is None:
             self._hash = hash(frozenset(self._d.items()))
