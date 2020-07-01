@@ -131,7 +131,6 @@ class ModuleBase:
 
     config_spec = []
     dependencies = []
-    _dependency_objects = {}
     config_keys_not_in_path = []
     requires_random_seed = False
 
@@ -238,6 +237,9 @@ class ModuleBase:
         return cls(config, provide=provide, share_dependency_objects=False).config
 
     def __init__(self, config=None, provide=None, share_dependency_objects=False, build=True):
+        # create new dict to prevent it from being shared with other class instances
+        self._dependency_objects = {}
+
         if isinstance(config, FrozenDict):
             config = config._as_dict()
 

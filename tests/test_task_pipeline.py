@@ -263,12 +263,12 @@ def test_module_path(rank_modules):
     rrt = RerankTask()
     assert (
         rrt.get_module_path()
-        == "collection-robust04/benchmark-rob04yang/collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42/collection-robust04/index-anserini_stemmer-None/tokenizer-anserini_keepstops-True_stemmer-None/extractor-embedtext_calcidf-True_embeddings-glove6b_maxdoclen-800_maxqlen-4_usecache-False_zerounk-False/trainer-pytorch_batch-32_gradacc-1_itersize-512_lr-0.001_niters-20_softmaxloss-False_validatefreq-1/reranker-DRMM_gateType-IDF_histType-LCH_nbins-29_nodes-5/task-rerank_fold-s1_optimize-map_seed-42"
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-porter/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42/collection-robust04/index-anserini_stemmer-None/tokenizer-anserini_keepstops-True_stemmer-None/extractor-embedtext_calcidf-True_embeddings-glove6b_maxdoclen-800_maxqlen-4_usecache-False_zerounk-False/trainer-pytorch_batch-32_gradacc-1_itersize-512_lr-0.001_niters-20_softmaxloss-False_validatefreq-1/reranker-DRMM_gateType-IDF_histType-LCH_nbins-29_nodes-5/task-rerank_fold-s1_optimize-map_seed-42"
     )
     assert rrt.benchmark.get_module_path() == "collection-robust04/benchmark-rob04yang"
     assert (
         rrt.rank.get_module_path()
-        == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-None/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
+        == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-porter/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
     )
 
 
