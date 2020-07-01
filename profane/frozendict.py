@@ -1,5 +1,4 @@
 import collections
-import json
 
 
 class FrozenDict(collections.abc.Mapping):
