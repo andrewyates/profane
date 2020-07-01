@@ -237,8 +237,9 @@ class ModuleBase:
         return cls(config, provide=provide, share_dependency_objects=False).config
 
     def __init__(self, config=None, provide=None, share_dependency_objects=False, build=True):
-        # create new dict to prevent it from being shared with other class instances
+        # create new objects to prevent them from being shared with other class instances
         self._dependency_objects = {}
+        self._provided_dependency = set()
 
         if isinstance(config, FrozenDict):
             config = config._as_dict()
@@ -272,6 +273,7 @@ class ModuleBase:
             # if the dependency object has been provided, use it directly
             if dependency.key in provide:
                 dependencies[dependency.key] = provide[dependency.key]
+                self._provided_dependency.add(dependency.key)
 
                 if dependency.key in config:
                     logger.warning(
@@ -391,7 +393,11 @@ class ModuleBase:
         print(prefix + this)
         for dependency in self.dependencies:
             child = self._dependency_objects[dependency.key]
-            child.print_module_graph(prefix=childprefix)
+
+            if dependency.key in self._provided_dependency:
+                print(f"{childprefix}{child.module_type}={child.module_name}  [provided by pipeline]")
+            else:
+                child.print_module_graph(prefix=childprefix)
 
     def print_module_config(self, prefix=""):
         lines = []
@@ -408,7 +414,11 @@ class ModuleBase:
         for key in order:
             if key in self._dependency_objects:
                 lines.append(f"{prefix}{key}:{Style.RESET_ALL}")
-                self._dependency_objects[key]._config_summary(lines, prefix=prefix + "  ")
+                childprefix = prefix + "  "
+                if key in self._provided_dependency:
+                    lines.append(f"{childprefix}{Style.DIM}[provided by pipeline]{Style.RESET_ALL}")
+                else:
+                    self._dependency_objects[key]._config_summary(lines, prefix=childprefix)
             else:
                 if options[key].description:
                     lines.append(f"{prefix}{Style.DIM}# {options[key].description}{Style.RESET_ALL}")
