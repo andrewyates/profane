@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 import random
+import numpy as np
 from glob import glob
 
 from colorama import Style, Fore
@@ -347,15 +348,8 @@ class ModuleBase:
             constants["RANDOM_SEED"] = int(config.get("seed", _DEFAULT_RANDOM_SEED))
             random.seed(constants["RANDOM_SEED"])
 
-            try:
-                import numpy as np
-
-                np.random.seed(constants["RANDOM_SEED"])
-                self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
-            except ModuleNotFoundError:
-                # numpy is not available
-                self.rng = None
-
+        np.random.seed(constants["RANDOM_SEED"])
+        self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
         config["seed"] = constants["RANDOM_SEED"]
 
     def get_cache_path(self):
