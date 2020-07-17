@@ -338,7 +338,10 @@ class ModuleBase:
 
     def _set_random_seed(self, config):
         """ If this module requires a random seed, set one and initialize the RNGs.
-            TODO write detailed docs for the behavior. difficulty is that RNGs are shared, so first seed set must be used. """
+
+            All modules must share the same seed, because they may make calls to the same RNGs (e.g., ``np.random``).
+            However, this can lead to non-deterministic behavior and should be avoided whenever possible.
+            Instead, modules should use their own numpy RNG at `self.rng` to avoid RNG interactions between modules. """
 
         if not self.requires_random_seed:
             return
@@ -347,8 +350,8 @@ class ModuleBase:
         if "RANDOM_SEED" not in constants:
             constants["RANDOM_SEED"] = int(config.get("seed", _DEFAULT_RANDOM_SEED))
             random.seed(constants["RANDOM_SEED"])
+            np.random.seed(constants["RANDOM_SEED"])
 
-        np.random.seed(constants["RANDOM_SEED"])
         self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
         config["seed"] = constants["RANDOM_SEED"]
 
@@ -360,7 +363,7 @@ class ModuleBase:
         return constants["CACHE_BASE_PATH"] / self.get_module_path()
 
     def get_module_path(self):
-        """ Return a relative path encoding the module's config and its dependenceis """
+        """ Return a relative path encoding the module's config and its dependencies """
 
         if self.dependencies:
             prefix = os.path.join(
