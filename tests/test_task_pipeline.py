@@ -303,6 +303,19 @@ def test_config_seed_nonpropagation(rank_modules):
     assert rt.searcher.config["seed"] == _DEFAULT_RANDOM_SEED
 
 
+def test_prng_creation(rank_modules):
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
+
+    rt = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
+    assert hasattr(rt, "rng")
+    assert hasattr(rt.searcher, "rng")
+
+    assert not hasattr(rt.searcher.index, "rng")
+    assert not hasattr(rt.searcher.index.collection, "rng")
+    assert not hasattr(rt.benchmark, "rng")
+    assert not hasattr(rt.benchmark.collection, "rng")
+
+
 def test_registry_enumeration(rank_modules):
     assert module_registry.get_module_types() == [
         "benchmark",
