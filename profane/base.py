@@ -7,6 +7,7 @@ from glob import glob
 
 from colorama import Style, Fore
 
+from profane.cli import config_string_to_dict
 from profane.config_option import ConfigOption
 from profane.exceptions import PipelineConstructionError, InvalidConfigError, InvalidModuleError
 from profane.frozendict import FrozenDict
@@ -241,6 +242,9 @@ class ModuleBase:
         # create new objects to prevent them from being shared with other class instances
         self._dependency_objects = {}
         self._provided_dependency = set()
+
+        if isinstance(config, str):
+            config = config_string_to_dict(config)
 
         if isinstance(config, FrozenDict):
             config = config._as_dict()

@@ -316,6 +316,17 @@ def test_prng_creation(rank_modules):
     assert not hasattr(rt.benchmark.collection, "rng")
 
 
+def test_creation_with_config_string(rank_modules):
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
+
+    rt1 = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
+    rt2 = RankTask("searcher.seed=123 searcher.index.stemmer=other")
+    rt3 = RankTask("searcher.seed=456 searcher.seed=123 searcher.index.stemmer=other")
+
+    assert rt1.config == rt2.config
+    assert rt2.config == rt3.config
+
+
 def test_registry_enumeration(rank_modules):
     assert module_registry.get_module_types() == [
         "benchmark",

@@ -1,3 +1,8 @@
+def config_string_to_dict(s):
+    s = " ".join(s.split())  # remove consecutive whitespace
+    return config_list_to_dict(s.split())
+
+
 def config_list_to_dict(l):
     d = {}
 
