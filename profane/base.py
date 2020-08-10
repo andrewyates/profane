@@ -365,31 +365,37 @@ class ModuleBase:
         self.rng = np.random.Generator(np.random.PCG64(constants["RANDOM_SEED"]))
         config["seed"] = constants["RANDOM_SEED"]
 
-    def get_cache_path(self):
+    def get_cache_path(self, *args, **kwargs):
         """ Return an absolute path that can be used for caching.
             The path is a function of the module's config and the configs of its dependencies.
         """
 
-        return constants["CACHE_BASE_PATH"] / self.get_module_path()
+        return constants["CACHE_BASE_PATH"] / self.get_module_path(*args, **kwargs)
 
-    def get_module_path(self):
+    def get_module_path(self, skip_config_keys=None):
         """ Return a relative path encoding the module's config and its dependencies """
 
         if self.dependencies:
             prefix = os.path.join(
                 *[self._dependency_objects[dependency.key].get_module_path() for dependency in self.dependencies]
             )
-            return os.path.join(prefix, self._this_module_path_only())
+            return os.path.join(prefix, self._this_module_path_only(skip_config_keys=skip_config_keys))
         else:
             return self._this_module_path_only()
 
-    def _this_module_path_only(self):
+    def _this_module_path_only(self, skip_config_keys=None):
         """ Return a path encoding only the module's config (and not its dependencies) """
+
+        if isinstance(skip_config_keys, str):
+            skip_config_keys = [skip_config_keys]
+
+        if skip_config_keys is None:
+            skip_config_keys = []
 
         module_cfg = {
             k: self._config_as_strings[k]
             for k in self.config
-            if k not in self._dependency_objects and k not in self.config_keys_not_in_path
+            if k not in self._dependency_objects and k not in self.config_keys_not_in_path and k not in skip_config_keys
         }
         module_name_key = self.module_type + "-" + module_cfg.pop("name")
         return "_".join([module_name_key] + [f"{k}-{v}" for k, v in sorted(module_cfg.items())])
