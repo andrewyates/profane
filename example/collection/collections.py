@@ -1,4 +1,4 @@
-from profane import ModuleBase, Dependency, ConfigOption
+from profane import ModuleBase
 
 
 class Collection(ModuleBase):

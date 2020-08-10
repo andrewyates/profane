@@ -345,6 +345,15 @@ def test_creation_with_provide_list(rank_modules):
     assert rt.benchmark == benchmark
 
 
+def test_skip_config_in_module_path(rank_modules):
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
+
+    rerank = RerankTask()
+    assert rerank.get_module_path().endswith("/task-rerank_fold-s1_optimize-map_seed-42")
+    assert rerank.get_module_path(skip_config_keys="fold").endswith("/task-rerank_optimize-map_seed-42")
+    assert rerank.get_module_path(skip_config_keys=["fold", "seed"]).endswith("/task-rerank_optimize-map")
+
+
 def test_registry_enumeration(rank_modules):
     assert module_registry.get_module_types() == [
         "benchmark",
