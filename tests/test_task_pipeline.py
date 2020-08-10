@@ -327,6 +327,24 @@ def test_creation_with_config_string(rank_modules):
     assert rt2.config == rt3.config
 
 
+def test_creation_with_provide_obj(rank_modules):
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
+
+    benchmark = module_registry.lookup("benchmark", "trecdl")()
+    rt = RankTask("benchmark.name=rob04yang", provide=benchmark)
+
+    assert rt.benchmark == benchmark
+
+
+def test_creation_with_provide_list(rank_modules):
+    ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
+
+    benchmark = module_registry.lookup("benchmark", "trecdl")()
+    rt = RankTask("benchmark.name=rob04yang", provide=[benchmark])
+
+    assert rt.benchmark == benchmark
+
+
 def test_registry_enumeration(rank_modules):
     assert module_registry.get_module_types() == [
         "benchmark",

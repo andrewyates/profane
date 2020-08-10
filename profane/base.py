@@ -249,6 +249,12 @@ class ModuleBase:
         if isinstance(config, FrozenDict):
             config = config._as_dict()
 
+        if isinstance(provide, ModuleBase):
+            provide = [provide]
+
+        if isinstance(provide, (list, tuple)):
+            provide = {module.module_type: module for module in provide}
+
         # it is important that we create a new provide object here, because _instantiate_dependencies may add entries to it.
         # we don't want those entries to propagate higher in the module graph.
         # see the test with 'threerank_separate' in test_task_pipeline.py for illustration.
