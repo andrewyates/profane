@@ -88,11 +88,11 @@ def _parse_string_as_range(s, item_type):
         raise ValueError(f"invalid range: {s}")
 
     if item_type == int:
-        return list(range(start, stop, step))
+        return list(range(start, stop + step, step))
     elif item_type == float:
         precision = max(_rounding_precision(x) for x in (start, stop, step))
-        lst = [round(item, precision) for item in np.arange(start, stop, step)]
-        if lst[-1] == stop:
+        lst = [round(item, precision) for item in np.arange(start, stop + step, step)]
+        if lst[-1] > stop:
             del lst[-1]
         return lst
 
@@ -123,7 +123,7 @@ def convert_list_to_string(lst, item_type):
 
         if is_range:
             start = round(lst[0], precision)
-            stop = round(lst[-1] + step, precision)
+            stop = round(lst[-1], precision)
 
             start, stop, step = _unnecessary_floats_to_ints([start, stop, step])
             return f"{start}..{stop},{step}"

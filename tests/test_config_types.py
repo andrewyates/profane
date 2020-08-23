@@ -73,10 +73,10 @@ def test_convert_string_to_list():
     assert convert_string_to_list("1", str) == ("1",)
 
     # test range conversions
-    assert convert_string_to_list("1..4,1", int) == (1, 2, 3)
-    assert convert_string_to_list("1..4,0.5", float) == (1, 1.5, 2, 2.5, 3, 3.5)
-    assert convert_string_to_list("0.65..0.8,0.05", float) == (0.65, 0.7, 0.75)
-    assert convert_string_to_list("0.00001..0.00002,2e-06", float) == (1e-05, 1.2e-05, 1.4e-05, 1.6e-05, 1.8e-05)
+    assert convert_string_to_list("1..4,1", int) == (1, 2, 3, 4)
+    assert convert_string_to_list("1..4,0.5", float) == (1, 1.5, 2, 2.5, 3, 3.5, 4.0)
+    assert convert_string_to_list("0.65..0.8,0.05", float) == (0.65, 0.7, 0.75, 0.80)
+    assert convert_string_to_list("0.00001..0.00002,2e-06", float) == (1e-05, 1.2e-05, 1.4e-05, 1.6e-05, 1.8e-05, 2.0e-05)
 
     # test range checking endpoints
     assert convert_string_to_list("1,2,3,4,6", int) == (1, 2, 3, 4, 6)
@@ -90,8 +90,8 @@ def test_convert_string_to_list():
 
 
 def test_convert_list_to_string():
-    assert convert_list_to_string([1.1, 1.3, 1.5, 1.7], float) == "1.1..1.9,0.2"
-    assert convert_list_to_string([1, 3, 5], int) == "1..7,2"
+    assert convert_list_to_string([1.1, 1.3, 1.5, 1.7], float) == "1.1..1.7,0.2"
+    assert convert_list_to_string([1, 3, 5], int) == "1..5,2"
 
     assert convert_list_to_string([1, 3, 4], int) == "1,3,4"
     assert convert_list_to_string([1, 3, 4.9999], float) == "1,3,4.9999"
@@ -108,8 +108,8 @@ def test_convert_list_to_string():
     assert convert_list_to_string(["1", "2"], str) == "1,2"
     assert convert_list_to_string(["1", "2", "3", "4"], str) == "1,2,3,4"
 
-    assert convert_list_to_string([1, 2, 3.0], float) == "1..4,1"
-    assert convert_list_to_string([1.5, 2, 2.5], float) == "1.5..3,0.5"
+    assert convert_list_to_string([1, 2, 3.0], float) == "1..3,1"
+    assert convert_list_to_string([1.5, 2, 2.5], float) == "1.5..2.5,0.5"
 
 
 @composite
@@ -130,7 +130,7 @@ def arithmetic_sequence(draw, dtype):
     else:
         raise ValueError(f"Unexpected dtype {dtype}")
 
-    lst = np.around(np.arange(start, end, step), decimals=4).tolist()
+    lst = np.around(np.arange(start, end + step, step), decimals=4).tolist()
     assert len(lst) > 0
     return lst
 
