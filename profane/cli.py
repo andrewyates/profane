@@ -1,3 +1,7 @@
+import os
+from shlex import shlex
+
+
 def config_string_to_dict(s):
     s = " ".join(s.split())  # remove consecutive whitespace
     return config_list_to_dict(s.split())
@@ -24,10 +28,8 @@ def _dot_to_dict(d, k, v):
         d.setdefault(current_k, {})
         _dot_to_dict(d[current_k], remaining_path, v)
     elif k.lower() == "file":
-        with open(v, "rt") as f:
-            pairs = [pair for line in f for pair in line.strip().split(" ")]
-
-        for new_k, new_v in _config_list_to_pairs(pairs):
+        lst = _config_file_to_list(v)
+        for new_k, new_v in _config_list_to_pairs(lst):
             _dot_to_dict(d, new_k, new_v)
     else:
         d[k] = v
@@ -51,3 +53,17 @@ def _config_list_to_pairs(l):
         pairs.append((k, v))
 
     return pairs
+
+
+def _config_file_to_list(fn):
+    lst = []
+    with open(os.path.expanduser(fn), "rt") as f:
+        for line in f:
+            lex = shlex(line)
+            lex.whitespace = ""
+            kvs = "".join(list(lex))
+
+            for kv in kvs.strip().split():
+                lst.append(kv)
+
+    return lst

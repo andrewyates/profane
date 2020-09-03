@@ -6,8 +6,8 @@ from profane.exceptions import InvalidModuleError
 
 
 class ConfigOption:
-    """ Represents a config option required by a module.
-        When a module is created, any unspecified config options will receive `default_value`, 
+    """Represents a config option required by a module.
+        When a module is created, any unspecified config options will receive `default_value`,
         and all config options will be cast to value_type. The None type is considered to be a string.
         If one of the list types is used, the config option's value will always be provided to the module as a list.
         These lists can be converted to strings in list or range format when needed (see `ModuleBase._config_as_strings`).
@@ -100,10 +100,10 @@ def _parse_string_as_range(s, item_type):
 
 
 def convert_list_to_string(lst, item_type):
-    """ Convert a list to a string.
-        Try to represent it as a range if the list has more than two elements and item_type is float or int.
-        [1,2]       -> "1,2"
-        [1,2,3,4]   -> "1..5,1"
+    """Convert a list to a string.
+    Try to represent it as a range if the list has more than two elements and item_type is float or int.
+    [1,2]       -> "1,2"
+    [1,2,3,4]   -> "1..5,1"
     """
 
     lst = [item_type(x) for x in lst]

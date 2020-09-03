@@ -82,13 +82,13 @@ module_registry = ModuleRegistry()
 
 
 class Dependency:
-    """ Represents a dependency on another module.
+    """Represents a dependency on another module.
 
-        If name is None, the dependency must be provided by the pipeline (i.e., in `provided_modules`).
-        Otherwise, the module class corresponding to `name` will be used.
+    If name is None, the dependency must be provided by the pipeline (i.e., in `provided_modules`).
+    Otherwise, the module class corresponding to `name` will be used.
 
-        If default_config_overrides is a dict, it will be used to override the dependency's default config options.
-        Note that user may still override these options e.g. on the command line.
+    If default_config_overrides is a dict, it will be used to override the dependency's default config options.
+    Note that user may still override these options e.g. on the command line.
     """
 
     def __init__(self, key, module, name=None, default_config_overrides=None, provide_this=False, provide_children=None):
@@ -117,18 +117,18 @@ class Dependency:
 
 
 class ModuleBase:
-    """ Base class for profane modules.
-        Module construction proceeds as follows:
-        1) Any config options not present in `config` are filled in with their default values. Config options and their defaults are specified in the `config_spec` class attribute.
-        2) Any dependencies declared in the `dependencies` class attribute are recursively instantiated. If the dependency object is present in `provide`, this object will be used instead of instantiating a new object for the dependency.
-        3) The module object's `config` variable is updated to reflect the configs of its dependencies and then frozen.
+    """Base class for profane modules.
+    Module construction proceeds as follows:
+    1) Any config options not present in `config` are filled in with their default values. Config options and their defaults are specified in the `config_spec` class attribute.
+    2) Any dependencies declared in the `dependencies` class attribute are recursively instantiated. If the dependency object is present in `provide`, this object will be used instead of instantiating a new object for the dependency.
+    3) The module object's `config` variable is updated to reflect the configs of its dependencies and then frozen.
 
-        After construction is complete, the module's dependencies are available as instance variables: self.`dependency key`.
+    After construction is complete, the module's dependencies are available as instance variables: self.`dependency key`.
 
-        Args:
-            config: dictionary containing a config to apply to this module and its dependencies
-            provide: dictionary mapping dependency keys to module objects 
-            share_dependency_objects: if true, dependencies will be cached in the registry based on their configs and reused. See the `share_objects` argument of `ModuleBase.create`.
+    Args:
+        config: dictionary containing a config to apply to this module and its dependencies
+        provide: dictionary mapping dependency keys to module objects
+        share_dependency_objects: if true, dependencies will be cached in the registry based on their configs and reused. See the `share_objects` argument of `ModuleBase.create`.
     """
 
     config_spec = []
@@ -143,8 +143,8 @@ class ModuleBase:
 
     @classmethod
     def _validate_and_cast_config(cls, config):
-        """ Validates `config` and casts values to their correct types.
-            Reraises an exception if any option present is not recognized or is incompatible with its type.
+        """Validates `config` and casts values to their correct types.
+        Reraises an exception if any option present is not recognized or is incompatible with its type.
         """
 
         options = {option.key: option for option in cls.config_spec}
@@ -209,13 +209,13 @@ class ModuleBase:
 
     @classmethod
     def create(cls, name, config=None, provide=None, share_objects=True):
-        """ Creates a module by looking up a `name` in the module registry corresponding to the calling class' module type.
-            `config` and `provide` are passed to the module's constructor.
+        """Creates a module by looking up a `name` in the module registry corresponding to the calling class' module type.
+        `config` and `provide` are passed to the module's constructor.
 
-            If `share_objects` is true:
-            - any instantiated module objects will be cached in the registry based on their configs
-            - when a module with the same config is created, the cached object is returned rather than a new instance
-            This behavior applies to any module dependencies as well.
+        If `share_objects` is true:
+        - any instantiated module objects will be cached in the registry based on their configs
+        - when a module with the same config is created, the cached object is returned rather than a new instance
+        This behavior applies to any module dependencies as well.
         """
 
         module_cls = module_registry.lookup(cls.module_type, name)
@@ -347,11 +347,11 @@ class ModuleBase:
             self.config[module_name] = module_obj.config
 
     def _set_random_seed(self, config):
-        """ If this module requires a random seed, set one and initialize the RNGs.
+        """If this module requires a random seed, set one and initialize the RNGs.
 
-            All modules must share the same seed, because they may make calls to the same RNGs (e.g., ``np.random``).
-            However, this can lead to non-deterministic behavior and should be avoided whenever possible.
-            Instead, modules should use their own numpy RNG at `self.rng` to avoid RNG interactions between modules. """
+        All modules must share the same seed, because they may make calls to the same RNGs (e.g., ``np.random``).
+        However, this can lead to non-deterministic behavior and should be avoided whenever possible.
+        Instead, modules should use their own numpy RNG at `self.rng` to avoid RNG interactions between modules."""
 
         if not self.requires_random_seed:
             return
@@ -366,8 +366,8 @@ class ModuleBase:
         config["seed"] = constants["RANDOM_SEED"]
 
     def get_cache_path(self, *args, **kwargs):
-        """ Return an absolute path that can be used for caching.
-            The path is a function of the module's config and the configs of its dependencies.
+        """Return an absolute path that can be used for caching.
+        The path is a function of the module's config and the configs of its dependencies.
         """
 
         return constants["CACHE_BASE_PATH"] / self.get_module_path(*args, **kwargs)

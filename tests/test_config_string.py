@@ -31,7 +31,8 @@ def test_config_string_to_dict():
 def test_config_string_with_files_to_dict(tmpdir):
     mainfn = os.path.join(tmpdir, "main.txt")
     with open(mainfn, "wt") as f:
-        print("main=24", file=f)
+        print("main=24  # comment", file=f)
+        print("#main=25", file=f)
 
     foofn = os.path.join(tmpdir, "foo.txt")
     with open(foofn, "wt") as f:
