@@ -1,3 +1,4 @@
+import os
 from shlex import shlex
 
 
@@ -56,7 +57,7 @@ def _config_list_to_pairs(l):
 
 def _config_file_to_list(fn):
     lst = []
-    with open(fn, "rt") as f:
+    with open(os.path.expanduser(fn), "rt") as f:
         for line in f:
             lex = shlex(line)
             lex.whitespace = ""
