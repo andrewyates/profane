@@ -1,6 +1,6 @@
 class ConstantsRegistry:
-    """ Write-once registry that keeps track of constants shared by modules.
-        ConstantsRegistry behaves like a dict, but keys can only be assigned to once.
+    """Write-once registry that keeps track of constants shared by modules.
+    ConstantsRegistry behaves like a dict, but keys can only be assigned to once.
     """
 
     def __init__(self):
