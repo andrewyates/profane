@@ -128,7 +128,7 @@ class ModuleBase:
     Args:
         config: dictionary containing a config to apply to this module and its dependencies
         provide: dictionary mapping dependency keys to module objects
-        share_dependency_objects: if true, dependencies will be cached in the registry based on their configs and reused. See the `share_objects` argument of `ModuleBase.create`.
+        share_objects: if true, dependencies will be cached in the registry based on their configs and reused. However, this module itself will not be cached; use `ModuleBase.create` to cache both the module and its dependencies.
     """
 
     config_spec = []
@@ -220,7 +220,7 @@ class ModuleBase:
         """
 
         module_cls = module_registry.lookup(cls.module_type, name)
-        module_obj = module_cls(config, provide, share_dependency_objects=share_objects)
+        module_obj = module_cls(config, provide, share_objects=share_objects)
 
         if not share_objects:
             return module_obj
@@ -237,9 +237,9 @@ class ModuleBase:
     @classmethod
     def compute_config(cls, config=None, provide=None):
         """Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account."""
-        return cls(config, provide=provide, share_dependency_objects=False).config
+        return cls(config, provide=provide, share_objects=False).config
 
-    def __init__(self, config=None, provide=None, share_dependency_objects=False, build=True):
+    def __init__(self, config=None, provide=None, share_objects=False, build=True):
         # create new objects to prevent them from being shared with other class instances
         self._dependency_objects = {}
         self._provided_dependency = set()
@@ -272,7 +272,7 @@ class ModuleBase:
         self.config = self._validate_and_cast_config(config)
         self.config = self._fill_in_default_config_options(self.config)
         self._config_as_strings = self._config_values_to_strings(self.config)
-        self._instantiate_dependencies(self.config, provide, share_dependency_objects)
+        self._instantiate_dependencies(self.config, provide, share_objects)
         # freeze config
         self.config = FrozenDict(self.config)
 

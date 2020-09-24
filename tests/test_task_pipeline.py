@@ -218,7 +218,7 @@ def test_creation_with_more_complex_provide(rank_modules):
 def test_creation_with_module_object_sharing(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    tworank_trecdl = TwoRankTask({"benchmark": {"name": "trecdl"}}, share_dependency_objects=True)
+    tworank_trecdl = TwoRankTask({"benchmark": {"name": "trecdl"}}, share_objects=True)
     # both Rank tasks should be identical and thus pointing to the same object
     assert tworank_trecdl.rank1a == tworank_trecdl.rank1b
     # however, the TwoRankTask object is not shared because .create() was not used
@@ -230,21 +230,19 @@ def test_creation_with_module_object_sharing(rank_modules):
     assert TwoRankTask.create("tworank", tworank_trecdl.config) != TwoRankTask.create("tworank")
 
     # change k1 so that Rank and Searcher objects should be different
-    tworank_k1 = TwoRankTask(
-        {"rank1a": {"searcher": {"k1": 0.5}}, "rank1b": {"searcher": {"k1": 1.0}}}, share_dependency_objects=True
-    )
+    tworank_k1 = TwoRankTask({"rank1a": {"searcher": {"k1": 0.5}}, "rank1b": {"searcher": {"k1": 1.0}}}, share_objects=True)
     assert tworank_k1.rank1a.benchmark == tworank_k1.rank1b.benchmark
     assert tworank_k1.rank1a.searcher.index == tworank_k1.rank1b.searcher.index
     # but Benchmark and Index should be the same objects
     assert tworank_k1.rank1a != tworank_k1.rank1b
     assert tworank_k1.rank1a.searcher != tworank_k1.rank1b.searcher
     # and rank1b should be the same object as used in tworank_default
-    tworank_default = TwoRankTask(share_dependency_objects=True)
+    tworank_default = TwoRankTask(share_objects=True)
     assert tworank_k1.rank1b == tworank_default.rank1b
 
     # this ThreeRank should use the same benchmark for both its TwoRank and Rank
     threerank_same = ThreeRankTask(
-        {"tworank": {"benchmark": {"name": "trecdl"}}, "rank3": {"benchmark": {"name": "trecdl"}}}, share_dependency_objects=True
+        {"tworank": {"benchmark": {"name": "trecdl"}}, "rank3": {"benchmark": {"name": "trecdl"}}}, share_objects=True
     )
     assert threerank_same.tworank.benchmark == threerank_same.rank3.benchmark
 
