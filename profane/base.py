@@ -215,7 +215,7 @@ class ModuleBase:
         return config_as_strings
 
     @classmethod
-    def create(cls, name, provide=None, config=None, share_objects=True):  # , **kwargs):
+    def create(cls, name, provide=None, config=None, share_objects=True, **kwargs):
         """Creates a module by looking up a `name` in the module registry corresponding to the calling class' module type.
         `config` and `provide` are passed to the module's constructor.
 
@@ -225,12 +225,8 @@ class ModuleBase:
         This behavior applies to any module dependencies as well.
         """
 
-        # move all config options in kwargs into the config dictionary
-        #        for k, v in kwargs.items():
-        #            config[k] = v
-
         module_cls = module_registry.lookup(cls.module_type, name)
-        module_obj = module_cls(provide=provide, config=config, share_objects=share_objects)
+        module_obj = module_cls(provide=provide, config=config, share_objects=share_objects, **kwargs)
 
         if not share_objects:
             return module_obj
@@ -249,7 +245,7 @@ class ModuleBase:
         """ Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account. """
         return cls(config=config, provide=provide, share_objects=False).config
 
-    def __init__(self, provide=None, config=None, share_objects=False, build=True):  # , **kwargs):
+    def __init__(self, provide=None, config=None, share_objects=False, build=True, **kwargs):
         # create new objects to prevent them from being shared with other class instances
         self._dependency_objects = {}
         self._provided_dependency = set()
@@ -259,9 +255,6 @@ class ModuleBase:
 
         if isinstance(config, FrozenDict):
             config = config._as_dict()
-
-        #        for k, v in kwargs.items():
-        #            config[k] = v
 
         if isinstance(provide, ModuleBase):
             provide = [provide]
@@ -281,6 +274,7 @@ class ModuleBase:
         config = config.copy()
 
         config["name"] = self.module_name
+        config = self._add_kwargs_to_config(kwargs, config)
         self._set_random_seed(config)
         self.config = self._validate_and_cast_config(config)
         self.config = self._fill_in_default_config_options(self.config)
@@ -291,6 +285,17 @@ class ModuleBase:
 
         if build and hasattr(self, "build"):
             self.build()
+
+    @classmethod
+    def _add_kwargs_to_config(cls, kwargs, config):
+        options = {option.key: option for option in cls.config_spec}
+        for key in kwargs:
+            if key in options:
+                config[key] = kwargs[key]
+            else:
+                raise InvalidConfigError(f"kwarg does not match any config option: {key}={kwargs[key]}")
+
+        return config
 
     def _instantiate_dependencies(self, config, provide, share_objects):
         dependencies = {}

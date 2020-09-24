@@ -110,6 +110,24 @@ def test_module_creation_with_dependencies(test_modules):
     assert mod2.dependencies == mod.dependencies
 
 
+def test_module_creation_with_kwargs(test_modules):
+    ModuleTypeA, AParent = test_modules
+
+    @ModuleTypeA.register
+    class AKwarg(ModuleTypeA):
+        module_name = "AKwarg"
+        config_spec = [
+            ConfigOption(key="foo1", default_value="val1", description="test option"),
+            ConfigOption(key="foo2", default_value="val2", description="test option"),
+        ]
+
+    kw = AKwarg(foo1="new1", config="foo2=another2 foo1=overridden1")
+    assert kw.config == {"foo2": "another2", "foo1": "new1", "name": "AKwarg"}
+
+    with pytest.raises(InvalidConfigError):
+        AKwarg(invalid="doesntexist")
+
+
 def test_module_creation_with_provided_dependencies(test_modules):
     ModuleTypeA, AParent = test_modules
 
