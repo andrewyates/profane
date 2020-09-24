@@ -19,6 +19,7 @@ logger.addHandler(logging.NullHandler())
 
 _DEFAULT_RANDOM_SEED = 42
 constants = constants.ConstantsRegistry()
+reserved_config_keys = {"build", "config", "file", "name", "provide", "share_objects"}
 
 
 class ModuleRegistry:
@@ -149,6 +150,12 @@ class ModuleBase:
 
         options = {option.key: option for option in cls.config_spec}
         dependencies = set(dependency.key for dependency in cls.dependencies)
+
+        invalid_keys = reserved_config_keys.intersection(options)
+        if invalid_keys:
+            raise InvalidConfigError(
+                f"the following keywords are reserved and cannot be declared in your config_spec: {sorted(invalid_keys)}"
+            )
 
         for key in list(config.keys()):
             if key == "name":

@@ -1,6 +1,13 @@
 import pytest
 
-from profane.base import ModuleBase, PipelineConstructionError, InvalidConfigError, Dependency, module_registry
+from profane.base import (
+    ModuleBase,
+    PipelineConstructionError,
+    InvalidConfigError,
+    Dependency,
+    module_registry,
+    reserved_config_keys,
+)
 from profane.config_option import ConfigOption
 
 
@@ -148,3 +155,26 @@ def test_module_compute_config(test_modules):
     modified_config["bar"]["bar1"] = "providedval"
     abar = ModuleTypeA.create("ABar", config={"bar1": "providedval"})
     assert AParent.compute_config(config={"myfoo": {"foo1": "different"}}, provide={"bar": abar}) == modified_config
+
+
+def test_config_reserved():
+    class ModuleTypeA(ModuleBase):
+        module_type = "Atype"
+
+    for key in reserved_config_keys:
+
+        @ModuleTypeA.register
+        class Fail1(ModuleTypeA):
+            module_name = "fail1_" + key
+            config_spec = [ConfigOption(key=key, default_value="val1", description="reserved keyword")]
+
+        with pytest.raises(InvalidConfigError):
+            Fail1()
+
+    # let's reassure ourselves there was no caching-related funny business
+    @ModuleTypeA.register
+    class Fail1(ModuleTypeA):
+        module_name = "fail1_shouldwork"
+        config_spec = [ConfigOption(key="shouldwork", default_value="val1", description="reserved keyword")]
+
+    assert Fail1().config["shouldwork"] == "val1"
