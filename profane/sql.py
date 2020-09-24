@@ -42,6 +42,10 @@ class DBManager:
 
         self.session = sessionmaker(bind=engine)()
 
+    def save(self, run):
+        self.session.add(run)
+        self.session.commit()
+
     def queue_run(self, command, config, priority=0):
         run = Run(
             config=config,
@@ -51,8 +55,7 @@ class DBManager:
             queue_time=datetime.datetime.now(datetime.timezone.utc),
         )
 
-        self.session.add(run)
-        self.session.commit()
+        self.save(run)
         return run.run_id
 
     def clear_zombie_runs(self):
@@ -89,15 +92,13 @@ class DBManager:
         run.pid = os.getpid()
         run.status = "RUNNING"
         run.tries += 1
-        self.session.add(run)
-        self.session.commit()
+        self.save(run)
 
     def _ended_event(self, run, status):
         run = self.session.query(Run).filter(Run.run_id == run.run_id).with_for_update().one()
         run.stop_time = datetime.datetime.now(datetime.timezone.utc)
         run.status = status
-        self.session.add(run)
-        self.session.commit()
+        self.save(run)
 
     def completed_event(self, run):
         return self._ended_event(run, "COMPLETED")
