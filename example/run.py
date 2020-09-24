@@ -32,7 +32,7 @@ def parse_task_string(s):
 
 def prepare_task(fullcommand, config):
     taskstr, commandstr = parse_task_string(fullcommand)
-    task = Task.create(taskstr, config)
+    task = Task.create(taskstr, config=config)
     task_entry_function = getattr(task, commandstr)
     return task, task_entry_function
 
