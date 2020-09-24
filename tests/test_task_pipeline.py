@@ -170,7 +170,7 @@ def test_creation_with_simple_provide(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     # non-default collection should be set in both benchmark's and searcher's dependencies
-    rank = RankTask({"benchmark": {"collection": {"name": "msmarco"}}})
+    rank = RankTask(config={"benchmark": {"collection": {"name": "msmarco"}}})
     assert rank.benchmark.collection.module_name == "msmarco"
     assert rank.searcher.index.collection.module_name == "msmarco"
     assert rank.benchmark.collection == rank.searcher.index.collection
@@ -187,24 +187,26 @@ def test_creation_with_complex_provide(rank_modules):
     assert tworank_default.rank1a.searcher.index.collection == tworank_default.rank1b.searcher.index.collection
     assert tworank_default.rank1a.searcher.index.collection.module_name == "robust04"
     # re-using the config should yield a new object with the same config
-    assert tworank_default.config == TwoRankTask(tworank_default.config).config
+    assert tworank_default.config == TwoRankTask(config=tworank_default.config).config
 
     # TwoRank task should provide same non-default benchmark to both Rank tasks
-    tworank_trecdl = TwoRankTask({"benchmark": {"name": "trecdl"}})
+    tworank_trecdl = TwoRankTask(config={"benchmark": {"name": "trecdl"}})
     assert tworank_trecdl.rank1a.benchmark == tworank_trecdl.rank1b.benchmark
     assert tworank_trecdl.rank1a.benchmark.module_name == "trecdl"
     # and should provide same non-default collection to rank.searcher.index
     assert tworank_trecdl.rank1a.searcher.index.collection == tworank_trecdl.rank1b.searcher.index.collection
     assert tworank_trecdl.rank1a.searcher.index.collection.module_name == "msmarco"
     # re-using the config should yield a new object with the same config
-    assert tworank_trecdl.config == TwoRankTask(tworank_trecdl.config).config
+    assert tworank_trecdl.config == TwoRankTask(config=tworank_trecdl.config).config
 
 
 def test_creation_with_more_complex_provide(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     # this ThreeRank should provide a TwoRank with one benchmark and a Rank with a second (independent) benchmark
-    threerank = ThreeRankTask({"tworank": {"benchmark": {"name": "rob04yang"}}, "rank3": {"benchmark": {"name": "trecdl"}}})
+    threerank = ThreeRankTask(
+        config={"tworank": {"benchmark": {"name": "rob04yang"}}, "rank3": {"benchmark": {"name": "trecdl"}}}
+    )
     assert threerank.tworank.rank1a.benchmark == threerank.tworank.rank1b.benchmark
     assert threerank.tworank.rank1a.searcher.index.collection == threerank.tworank.rank1b.searcher.index.collection
     assert threerank.tworank.benchmark.module_name == "rob04yang"
@@ -212,25 +214,29 @@ def test_creation_with_more_complex_provide(rank_modules):
     assert threerank.tworank.rank1a.searcher.index.collection.module_name == "robust04"
     assert threerank.rank3.searcher.index.collection.module_name == "msmarco"
     # re-using the config should yield a new object with the same config
-    assert threerank.config == ThreeRankTask(threerank.config).config
+    assert threerank.config == ThreeRankTask(config=threerank.config).config
 
 
 def test_creation_with_module_object_sharing(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    tworank_trecdl = TwoRankTask({"benchmark": {"name": "trecdl"}}, share_objects=True)
+    tworank_trecdl = TwoRankTask(config={"benchmark": {"name": "trecdl"}}, share_objects=True)
     # both Rank tasks should be identical and thus pointing to the same object
     assert tworank_trecdl.rank1a == tworank_trecdl.rank1b
     # however, the TwoRankTask object is not shared because .create() was not used
-    assert tworank_trecdl != TwoRankTask(tworank_trecdl.config)
+    assert tworank_trecdl != TwoRankTask(config=tworank_trecdl.config)
 
     # calling .create() twice returns the same object when the config is the same
-    assert TwoRankTask.create("tworank", tworank_trecdl.config) == TwoRankTask.create("tworank", tworank_trecdl.config)
+    assert TwoRankTask.create("tworank", config=tworank_trecdl.config) == TwoRankTask.create(
+        "tworank", config=tworank_trecdl.config
+    )
     # and different objects when the configs are different
-    assert TwoRankTask.create("tworank", tworank_trecdl.config) != TwoRankTask.create("tworank")
+    assert TwoRankTask.create("tworank", config=tworank_trecdl.config) != TwoRankTask.create("tworank")
 
     # change k1 so that Rank and Searcher objects should be different
-    tworank_k1 = TwoRankTask({"rank1a": {"searcher": {"k1": 0.5}}, "rank1b": {"searcher": {"k1": 1.0}}}, share_objects=True)
+    tworank_k1 = TwoRankTask(
+        config={"rank1a": {"searcher": {"k1": 0.5}}, "rank1b": {"searcher": {"k1": 1.0}}}, share_objects=True
+    )
     assert tworank_k1.rank1a.benchmark == tworank_k1.rank1b.benchmark
     assert tworank_k1.rank1a.searcher.index == tworank_k1.rank1b.searcher.index
     # but Benchmark and Index should be the same objects
@@ -242,7 +248,7 @@ def test_creation_with_module_object_sharing(rank_modules):
 
     # this ThreeRank should use the same benchmark for both its TwoRank and Rank
     threerank_same = ThreeRankTask(
-        {"tworank": {"benchmark": {"name": "trecdl"}}, "rank3": {"benchmark": {"name": "trecdl"}}}, share_objects=True
+        config={"tworank": {"benchmark": {"name": "trecdl"}}, "rank3": {"benchmark": {"name": "trecdl"}}}, share_objects=True
     )
     assert threerank_same.tworank.benchmark == threerank_same.rank3.benchmark
 
@@ -250,7 +256,7 @@ def test_creation_with_module_object_sharing(rank_modules):
 def test_module_path(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    rt = RankTask({"searcher": {"index": {"stemmer": "other"}}})
+    rt = RankTask(config={"searcher": {"index": {"stemmer": "other"}}})
     assert (
         rt.get_module_path()
         == "collection-robust04/benchmark-rob04yang/collection-robust04/index-anserini_stemmer-other/searcher-bm25_k1-1.0_seed-42/task-rank_seed-42"
@@ -281,14 +287,14 @@ def test_config_keys_not_in_module_path():
             ConfigOption(key="path", default_value="nicetry", description="redacted"),
         ]
 
-    collection = CollectionSecret({"version": "illuminati"})
+    collection = CollectionSecret(config={"version": "illuminati"})
     assert collection.get_module_path() == "collection-secretdocs_version-illuminati"
 
 
 def test_config_seed_propagation(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    rt = RankTask({"seed": 123, "searcher": {"index": {"stemmer": "other"}}})
+    rt = RankTask(config={"seed": 123, "searcher": {"index": {"stemmer": "other"}}})
     assert rt.config["seed"] == 123
     assert rt.searcher.config["seed"] == 123
 
@@ -296,7 +302,7 @@ def test_config_seed_propagation(rank_modules):
 def test_config_seed_nonpropagation(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    rt = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
+    rt = RankTask(config={"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
     assert rt.config["seed"] == _DEFAULT_RANDOM_SEED
     assert rt.searcher.config["seed"] == _DEFAULT_RANDOM_SEED
 
@@ -304,7 +310,7 @@ def test_config_seed_nonpropagation(rank_modules):
 def test_prng_creation(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    rt = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
+    rt = RankTask(config={"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
     assert hasattr(rt, "rng")
     assert hasattr(rt.searcher, "rng")
 
@@ -317,9 +323,9 @@ def test_prng_creation(rank_modules):
 def test_creation_with_config_string(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
-    rt1 = RankTask({"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
-    rt2 = RankTask("searcher.seed=123 searcher.index.stemmer=other")
-    rt3 = RankTask("searcher.seed=456 searcher.seed=123 searcher.index.stemmer=other")
+    rt1 = RankTask(config={"searcher": {"seed": 123, "index": {"stemmer": "other"}}})
+    rt2 = RankTask(config="searcher.seed=123 searcher.index.stemmer=other")
+    rt3 = RankTask(config="searcher.seed=456 searcher.seed=123 searcher.index.stemmer=other")
 
     assert rt1.config == rt2.config
     assert rt2.config == rt3.config
@@ -329,7 +335,7 @@ def test_creation_with_provide_obj(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     benchmark = module_registry.lookup("benchmark", "trecdl")()
-    rt = RankTask("benchmark.name=rob04yang", provide=benchmark)
+    rt = RankTask(config="benchmark.name=rob04yang", provide=benchmark)
 
     assert rt.benchmark == benchmark
 
@@ -338,7 +344,7 @@ def test_creation_with_provide_list(rank_modules):
     ThreeRankTask, TwoRankTask, RankTask, RerankTask = rank_modules
 
     benchmark = module_registry.lookup("benchmark", "trecdl")()
-    rt = RankTask("benchmark.name=rob04yang", provide=[benchmark])
+    rt = RankTask(config="benchmark.name=rob04yang", provide=[benchmark])
 
     assert rt.benchmark == benchmark
 
