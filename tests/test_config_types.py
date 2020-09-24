@@ -58,7 +58,7 @@ def test_types():
     assert foo.config["intlist4"] == (4, 5)
     assert foo.config["floatlist1"] == (3.0,)
 
-    foo = ModuleFoo({"none-or-str": "str"})
+    foo = ModuleFoo(config={"none-or-str": "str"})
     assert type(foo.config["none-or-str"]) == str
     assert foo.config["none-or-str"] == "str"
 

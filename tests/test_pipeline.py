@@ -98,7 +98,7 @@ def test_module_creation_with_dependencies(test_modules):
     assert myfoobar.config == correct_parent_config["myfoo"]["myfoobar"]
 
     # test that creating AParent via init behaves the same
-    mod2 = AParent(config)
+    mod2 = AParent(config=config)
     assert mod2.config == correct_parent_config
     assert mod2.dependencies == mod.dependencies
 
@@ -134,7 +134,7 @@ def test_module_compute_config(test_modules):
         "bar": {"bar1": "val1", "name": "ABar"},
     }
 
-    mod = AParent({"key1": "non_default_value"})
+    mod = AParent(config={"key1": "non_default_value"})
 
     # the default config is returned, not the active config
     assert AParent.compute_config() == default_parent_config
@@ -142,9 +142,9 @@ def test_module_compute_config(test_modules):
     # the config is computed from the default and the given config
     modified_config = default_parent_config.copy()
     modified_config["myfoo"]["foo1"] = "different"
-    assert AParent.compute_config({"myfoo": {"foo1": "different"}}) == modified_config
+    assert AParent.compute_config(config={"myfoo": {"foo1": "different"}}) == modified_config
 
     # the config is computed based on the provided module also
     modified_config["bar"]["bar1"] = "providedval"
-    abar = ModuleTypeA.create("ABar", {"bar1": "providedval"})
-    assert AParent.compute_config({"myfoo": {"foo1": "different"}}, provide={"bar": abar}) == modified_config
+    abar = ModuleTypeA.create("ABar", config={"bar1": "providedval"})
+    assert AParent.compute_config(config={"myfoo": {"foo1": "different"}}, provide={"bar": abar}) == modified_config

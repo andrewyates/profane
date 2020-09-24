@@ -208,7 +208,7 @@ class ModuleBase:
         return config_as_strings
 
     @classmethod
-    def create(cls, name, config=None, provide=None, share_objects=True):
+    def create(cls, name, provide=None, config=None, share_objects=True):  # , **kwargs):
         """Creates a module by looking up a `name` in the module registry corresponding to the calling class' module type.
         `config` and `provide` are passed to the module's constructor.
 
@@ -218,8 +218,12 @@ class ModuleBase:
         This behavior applies to any module dependencies as well.
         """
 
+        # move all config options in kwargs into the config dictionary
+        #        for k, v in kwargs.items():
+        #            config[k] = v
+
         module_cls = module_registry.lookup(cls.module_type, name)
-        module_obj = module_cls(config, provide, share_objects=share_objects)
+        module_obj = module_cls(provide=provide, config=config, share_objects=share_objects)
 
         if not share_objects:
             return module_obj
@@ -234,11 +238,11 @@ class ModuleBase:
         return module_registry.lookup(cls.module_type, name)
 
     @classmethod
-    def compute_config(cls, config=None, provide=None):
+    def compute_config(cls, provide=None, config=None):
         """ Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account. """
-        return cls(config, provide=provide, share_objects=False).config
+        return cls(config=config, provide=provide, share_objects=False).config
 
-    def __init__(self, config=None, provide=None, share_objects=False, build=True):
+    def __init__(self, provide=None, config=None, share_objects=False, build=True):  # , **kwargs):
         # create new objects to prevent them from being shared with other class instances
         self._dependency_objects = {}
         self._provided_dependency = set()
@@ -248,6 +252,9 @@ class ModuleBase:
 
         if isinstance(config, FrozenDict):
             config = config._as_dict()
+
+        #        for k, v in kwargs.items():
+        #            config[k] = v
 
         if isinstance(provide, ModuleBase):
             provide = [provide]
@@ -271,7 +278,7 @@ class ModuleBase:
         self.config = self._validate_and_cast_config(config)
         self.config = self._fill_in_default_config_options(self.config)
         self._config_as_strings = self._config_values_to_strings(self.config)
-        self._instantiate_dependencies(self.config, provide, share_objects)
+        self._instantiate_dependencies(config=self.config, provide=provide, share_objects=share_objects)
         # freeze config
         self.config = FrozenDict(self.config)
 
@@ -312,7 +319,7 @@ class ModuleBase:
 
             # instantiate the dependency
             dependencies[dependency.key] = dependency_cls.create(
-                dependency_name, dependency_config, provide=provide, share_objects=share_objects
+                dependency_name, provide=provide, config=dependency_config, share_objects=share_objects
             )
 
             # provide the dependency for later modules?
