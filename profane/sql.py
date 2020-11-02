@@ -33,7 +33,7 @@ class Run(Base):
 
 class DBManager:
     def __init__(self, url):
-        engine = sa.create_engine(url)
+        engine = sa.create_engine(url, pool_pre_ping=True)
         if not database_exists(engine.url):
             print("creating missing DB")
             create_database(engine.url)
