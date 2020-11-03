@@ -1,4 +1,5 @@
 import collections
+from copy import deepcopy
 
 
 class FrozenDict(collections.abc.Mapping):
@@ -40,7 +41,16 @@ class FrozenDict(collections.abc.Mapping):
         return self._hash
 
     def _as_dict(self):
-        return self._d.copy()
+        unfrozen = deepcopy(self._d)
+
+        for k in list(unfrozen.keys()):
+            if isinstance(unfrozen[k], FrozenDict):
+                unfrozen[k] = unfrozen[k]._as_dict()
+
+        return unfrozen
+
+    def unfrozen_copy(self):
+        return self._as_dict()
 
 
 def _freeze_dicts(d):
