@@ -2,6 +2,8 @@ import datetime
 import os
 import socket
 
+from contextlib import contextmanager
+
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -40,11 +42,7 @@ class DBManager:
 
         Base.metadata.create_all(engine)
 
-        self.session = sessionmaker(bind=engine)()
-
-    def save(self, run):
-        self.session.add(run)
-        self.session.commit()
+        self.sessionmaker = sessionmaker(bind=engine)
 
     def queue_run(self, command, config, priority=0):
         run = Run(
@@ -55,50 +53,56 @@ class DBManager:
             queue_time=datetime.datetime.now(datetime.timezone.utc),
         )
 
-        self.save(run)
+        with self.session_scope() as session:
+            session.add(run)
+
         return run.run_id
 
     def clear_zombie_runs(self):
         # TODO first find runs, then do for_update later when clearing them only
-        for run in (
-            self.session.query(Run)
-            .filter(sa.and_(Run.status == "RUNNING", Run.hostname == socket.gethostname()))
-            .with_for_update()
-        ):
-            if not os.path.exists(f"/proc/{run.pid}"):
-                print(f"found zombie run_id={run.run_id} with pid: {run.pid}")
-                run.status = "FAILED"
-                self.session.add(run)
-
-        self.session.commit()
+        with self.session_scope() as session:
+            for run in (
+                session.query(Run)
+                .filter(sa.and_(Run.status == "RUNNING", Run.hostname == socket.gethostname()))
+                .with_for_update()
+            ):
+                if not os.path.exists(f"/proc/{run.pid}"):
+                    print(f"found zombie run_id={run.run_id} with pid: {run.pid}")
+                    run.status = "FAILED"
+                    session.add(run)
 
     def get_eligible_run(self, max_tries=3):
-        run = (
-            self.session.query(Run)
-            .filter(sa.or_(Run.status == "QUEUED", Run.status == "FAILED"))
-            .filter(Run.tries < max_tries)
-            .order_by(Run.priority.desc(), sa.text("random()"))
-            .limit(1)
-            .with_for_update()
-            .first()
-        )
+        with self.session_scope() as session:
+            run = (
+                session.query(Run)
+                .filter(sa.or_(Run.status == "QUEUED", Run.status == "FAILED"))
+                .filter(Run.tries < max_tries)
+                .order_by(Run.priority.desc(), sa.text("random()"))
+                .limit(1)
+                .with_for_update()
+                .first()
+            )
 
         return run
 
     def started_event(self, run):
-        run = self.session.query(Run).filter(Run.run_id == run.run_id).with_for_update().one()
-        run.start_time = datetime.datetime.now(datetime.timezone.utc)
-        run.hostname = socket.gethostname()
-        run.pid = os.getpid()
-        run.status = "RUNNING"
-        run.tries += 1
-        self.save(run)
+        with self.session_scope() as session:
+            run = session.query(Run).filter(Run.run_id == run.run_id).with_for_update().one()
+            run.start_time = datetime.datetime.now(datetime.timezone.utc)
+            run.hostname = socket.gethostname()
+            run.pid = os.getpid()
+            run.status = "RUNNING"
+            run.tries += 1
+
+            session.add(run)
 
     def _ended_event(self, run, status):
-        run = self.session.query(Run).filter(Run.run_id == run.run_id).with_for_update().one()
-        run.stop_time = datetime.datetime.now(datetime.timezone.utc)
-        run.status = status
-        self.save(run)
+        with self.session_scope() as session:
+            run = session.query(Run).filter(Run.run_id == run.run_id).with_for_update().one()
+            run.stop_time = datetime.datetime.now(datetime.timezone.utc)
+            run.status = status
+
+            session.add(run)
 
     def completed_event(self, run):
         return self._ended_event(run, "COMPLETED")
@@ -108,3 +112,18 @@ class DBManager:
 
     def failed_event(self, run):
         return self._ended_event(run, "FAILED")
+
+    # context manager from SA docs
+    # https://docs.sqlalchemy.org/en/13/orm/session_basics.html
+    @contextmanager
+    def session_scope(self):
+        """Provide a transactional scope around a series of operations."""
+        session = self.sessionmaker()
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
+
+        # unlike the example, we don't call session.close() since this invalidates Run objects (eg in worker.py)
