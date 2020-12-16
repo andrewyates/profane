@@ -7,7 +7,7 @@
 # Overview
 *Profane* is a library for creating complex experimental pipelines. Profane pipelines are based on two key ideas:
 1. An experiment is a *function of its configuration*. In other words, an experiment should be deterministic given a set of experimental parameters (random seed, specific algorithms to run, etc).
-2. An experiment is described as a *DAG* representing control flow in which the *state of a node is independent of its parent's state*. That is, a *node's operation is a function of its configuration and the configurations of its children*. This means that a node may not modify the configuration (or state) of its children (or descendants).
+2. An experiment is described as a *DAG* representing modules' (nodes') dependencies in which the *state of a node is independent of its parent's state*. That is, a *node's operation is a function of its configuration and the configurations of its children*. This means that a node may not modify the configuration (or state) of its children (or descendants).
 
 These allow for the construction of a flexible pipeline with automatic caching. Each node's configuration can be modified to change experimental parameters, and a node's output can be safely cached in a path derived from its configuration and the configurations of its children. These nodes are called modules.
 
