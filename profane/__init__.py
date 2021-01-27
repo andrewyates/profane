@@ -5,7 +5,7 @@ from profane.exceptions import PipelineConstructionError, InvalidConfigError, In
 from profane.frozendict import FrozenDict
 from profane.sql import DBManager
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 constants = profane.base.constants
 module_registry = profane.base.module_registry
