@@ -1,6 +1,7 @@
 import os
 from shlex import shlex
 import yaml
+import collections
 
 
 def config_string_to_dict(s):
@@ -17,6 +18,21 @@ def config_list_to_dict(l):
     return d
 
 
+
+
+def _deep_update(source, overrides):
+    """
+    Update a nested dictionary or similar mapping.
+    Modify ``source`` in place.
+    """
+    for key, value in overrides.items():
+        if isinstance(value, collections.abc.Mapping) and value:
+            returned = _deep_update(source.get(key, {}), value)
+            source[key] = returned
+        else:
+            source[key] = overrides[key]
+    return source
+
 def _recursive_update(ori_dict, new_dict):
     for k in new_dict:
         if k not in ori_dict:
@@ -31,7 +47,7 @@ def _recursive_update(ori_dict, new_dict):
 
 def _load_yaml(fn):
     with open(fn) as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
 
     if "_base_" in config:
         base_path = config["_base_"]
@@ -41,7 +57,17 @@ def _load_yaml(fn):
 
     return config
 
-def _dot_to_dict(d, k, v):
+def _flatten(d, parent_key='', sep='.'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.abc.MutableMapping):
+            items.extend(_flatten(v, new_key, sep=sep))
+        else:
+            items.append(str(new_key) + '=' + str(v))
+    return list(items)
+
+def _dot_to_dict(d, k, v, DEL=''):
     if k.startswith(".") or k.endswith("."):
         raise ValueError(f"invalid path: {k}")
 
@@ -51,16 +77,12 @@ def _dot_to_dict(d, k, v):
         remaining_path = ".".join(path[1:])
 
         d.setdefault(current_k, {})
-        _dot_to_dict(d[current_k], remaining_path, v)
+        
+        _dot_to_dict(d[current_k], remaining_path, v, DEL=DEL+"  ")
     elif k.lower() == "file":
-        ext = os.path.splitext(v)[1]
-        if ext == '.yaml':
-            y = _load_yaml(v)
-            d.update(y)
-        else:        
-            lst = _config_file_to_list(v)
-            for new_k, new_v in _config_list_to_pairs(lst):
-                _dot_to_dict(d, new_k, new_v)
+        lst = _config_file_to_list(v)
+        for new_k, new_v in _config_list_to_pairs(lst):
+            _dot_to_dict(d, new_k, new_v)
     else:
         d[k] = v
 
@@ -88,8 +110,8 @@ def _config_list_to_pairs(l):
 def _config_file_to_list(fn):
     lst = []
     ext = os.path.splitext(fn)[1]
-    if ext == 'yaml':
-        yaml_list = _load_yaml(fn)
+    if ext == '.yaml':
+        yaml_list = _flatten(_load_yaml(fn))
         lst.extend(yaml_list)
     else:
         with open(os.path.expanduser(fn), "rt") as f:
