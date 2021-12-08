@@ -48,13 +48,6 @@ def _recursive_update(ori_dict, new_dict):
 def _load_yaml(fn):
     with open(fn) as f:
         config = yaml.safe_load(f)
-
-    if "_base_" in config:
-        base_path = config["_base_"]
-        base_config = _load_yaml(base_path)
-        config = _recursive_update(ori_dict=base_config, new_dict=config)
-        del config["_base_"]
-
     return config
 
 def _flatten(d, parent_key='', sep='.'):
