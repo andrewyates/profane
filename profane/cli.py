@@ -18,21 +18,6 @@ def config_list_to_dict(l):
     return d
 
 
-
-
-def _deep_update(source, overrides):
-    """
-    Update a nested dictionary or similar mapping.
-    Modify ``source`` in place.
-    """
-    for key, value in overrides.items():
-        if isinstance(value, collections.abc.Mapping) and value:
-            returned = _deep_update(source.get(key, {}), value)
-            source[key] = returned
-        else:
-            source[key] = overrides[key]
-    return source
-
 def _recursive_update(ori_dict, new_dict):
     for k in new_dict:
         if k not in ori_dict:
