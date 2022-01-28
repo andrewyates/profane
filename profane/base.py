@@ -157,9 +157,8 @@ class ModuleBase:
             elif key == "seed":
                 if not cls.requires_random_seed:
                     raise InvalidConfigError(f"seed={config[key]} was provided but cls.requires_random_seed=False")
-                # this cannot happen because we overwrite the seed in module init
-                # if config["seed"] != constants.RANDOM_SEED:
-                #    raise InvalidConfigError(f"seed={config[key]} does not match constants.RANDOM_SEED={constants.RANDOM_SEED}")
+                if config["seed"] != constants.RANDOM_SEED:
+                    raise InvalidConfigError(f"seed={config[key]} does not match constants.RANDOM_SEED={constants.RANDOM_SEED}. This indicates that different seeds were configured within the same process which is not possible. Please start a new process for each different seed.")
             elif key in dependencies:
                 if isinstance(config[key], str):
                     raise InvalidConfigError(
