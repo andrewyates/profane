@@ -32,3 +32,11 @@ queue_cpu.sh
 /cache
 /results
 
+# testing
+.coverage
+.hypothesis/
+
+# tmp
+build/
+dist/
+profane.egg-info/
