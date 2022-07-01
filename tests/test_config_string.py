@@ -48,21 +48,17 @@ def test_config_string_with_files_to_dict(tmpdir):
         "main": "24",
     }
 
+
 def test_config_string_with_yaml_files_to_dict(tmpdir):
     mainfn = os.path.join(tmpdir, "main.yaml")
 
     main_data = dict(
-        main = 24,
+        main=24,
     )
     with open(mainfn, "wt") as f:
         yaml.dump(main_data, f, default_flow_style=False)
-    
-    foo_data = dict(
-        test1=20,
-        submod1=dict(test1=21, submod2=dict(test1=22)),
-        test3="extra",
-        FILE=mainfn
-    )  
+
+    foo_data = dict(test1=20, submod1=dict(test1=21, submod2=dict(test1=22)), test3="extra", FILE=mainfn)
 
     foofn = os.path.join(tmpdir, "foo.yaml")
     with open(foofn, "wt") as f:
@@ -73,4 +69,3 @@ def test_config_string_with_yaml_files_to_dict(tmpdir):
         "foo": {"test1": "20", "test3": "extra", "main": "24", "submod1": {"test1": "21", "submod2": {"test1": "22"}}},
         "main": "24",
     }
-    

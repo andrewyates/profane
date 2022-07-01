@@ -35,17 +35,19 @@ def _load_yaml(fn):
         config = yaml.safe_load(f)
     return config
 
-def _flatten(d, parent_key='', sep='.'):
+
+def _flatten(d, parent_key="", sep="."):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
         if isinstance(v, collections.abc.MutableMapping):
             items.extend(_flatten(v, new_key, sep=sep))
         else:
-            items.append(str(new_key) + '=' + str(v))
+            items.append(str(new_key) + "=" + str(v))
     return list(items)
 
-def _dot_to_dict(d, k, v, DEL=''):
+
+def _dot_to_dict(d, k, v, DEL=""):
     if k.startswith(".") or k.endswith("."):
         raise ValueError(f"invalid path: {k}")
 
@@ -55,8 +57,8 @@ def _dot_to_dict(d, k, v, DEL=''):
         remaining_path = ".".join(path[1:])
 
         d.setdefault(current_k, {})
-        
-        _dot_to_dict(d[current_k], remaining_path, v, DEL=DEL+"  ")
+
+        _dot_to_dict(d[current_k], remaining_path, v, DEL=DEL + "  ")
     elif k.lower() == "file":
         lst = _config_file_to_list(v)
         for new_k, new_v in _config_list_to_pairs(lst):
@@ -88,7 +90,7 @@ def _config_list_to_pairs(l):
 def _config_file_to_list(fn):
     lst = []
     ext = os.path.splitext(fn)[1]
-    if ext == '.yaml':
+    if ext == ".yaml":
         yaml_list = _flatten(_load_yaml(fn))
         lst.extend(yaml_list)
     else:
