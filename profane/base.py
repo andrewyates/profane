@@ -22,7 +22,7 @@ constants = constants.ConstantsRegistry()
 
 
 class ModuleRegistry:
-    """ Keeps track of modules that have been registered with `ModuleBase.register`"""
+    """Keeps track of modules that have been registered with `ModuleBase.register`"""
 
     def __init__(self):
         self.reset()
@@ -32,7 +32,7 @@ class ModuleRegistry:
         self.shared_objects = {}
 
     def register(self, cls):
-        """ Register a class that describes itself via a `module_type` and a `module_name variable. """
+        """Register a class that describes itself via a `module_type` and a `module_name variable."""
 
         if not hasattr(cls, "module_type"):
             raise InvalidModuleError(f"missing module_type for class: {cls}")
@@ -52,7 +52,7 @@ class ModuleRegistry:
         module_type_registry[cls.module_name] = cls
 
     def lookup(self, module_type, module_name):
-        """ Return the class corresponding to a `module_type` and `module_name` pair. """
+        """Return the class corresponding to a `module_type` and `module_name` pair."""
 
         if module_type not in self.registry:
             raise ValueError(f"unknown module_type '{module_type}'; known types: {self.get_module_types()}")
@@ -173,7 +173,7 @@ class ModuleBase:
 
     @classmethod
     def _fill_in_default_config_options(cls, config):
-        """ Adds default values to config for any key that is not already present """
+        """Adds default values to config for any key that is not already present"""
         for option in cls.config_spec:
             if option.key not in config:
                 config[option.key] = option.type(option.default_value)
@@ -181,7 +181,7 @@ class ModuleBase:
 
     @classmethod
     def _config_values_to_strings(cls, config):
-        """ Converts config values to strings that can be shown to the user """
+        """Converts config values to strings that can be shown to the user"""
 
         options = {option.key: option for option in cls.config_spec}
         dependencies = set(dependency.key for dependency in cls.dependencies)
@@ -234,7 +234,7 @@ class ModuleBase:
 
     @classmethod
     def compute_config(cls, config=None, provide=None):
-        """ Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account. """
+        """Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account."""
         return cls(config, provide=provide, share_dependency_objects=False).config
 
     def __init__(self, config=None, provide=None, share_dependency_objects=False, build=True):
@@ -372,7 +372,7 @@ class ModuleBase:
         return constants["CACHE_BASE_PATH"] / self.get_module_path(*args, **kwargs)
 
     def get_module_path(self, skip_config_keys=None):
-        """ Return a relative path encoding the module's config and its dependencies """
+        """Return a relative path encoding the module's config and its dependencies"""
 
         if self.dependencies:
             prefix = os.path.join(
@@ -383,7 +383,7 @@ class ModuleBase:
             return self._this_module_path_only()
 
     def _this_module_path_only(self, skip_config_keys=None):
-        """ Return a path encoding only the module's config (and not its dependencies) """
+        """Return a path encoding only the module's config (and not its dependencies)"""
 
         if isinstance(skip_config_keys, str):
             skip_config_keys = [skip_config_keys]

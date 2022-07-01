@@ -24,7 +24,7 @@ def rank_modules():
 
     @Task.register
     class ThreeRankTask(Task):
-        """ A strange rank task that runs two searchers on benchmark #1 (via TwoRank) and the third searcher on benchmark #2 """
+        """A strange rank task that runs two searchers on benchmark #1 (via TwoRank) and the third searcher on benchmark #2"""
 
         module_name = "threerank"
         dependencies = [
@@ -34,7 +34,7 @@ def rank_modules():
 
     @Task.register
     class TwoRankTask(Task):
-        """ A rank tasks two runs two searchers on the same benchmark """
+        """A rank tasks two runs two searchers on the same benchmark"""
 
         module_name = "tworank"
         dependencies = [

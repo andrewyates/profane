@@ -55,7 +55,7 @@ class ConfigOption:
 
 
 def convert_string_to_list(values, item_type):
-    """ Convert a comma-seperated string '1,2,3' to a list of item_type elements. """
+    """Convert a comma-seperated string '1,2,3' to a list of item_type elements."""
 
     if isinstance(values, str):
         as_range = _parse_string_as_range(values, item_type)

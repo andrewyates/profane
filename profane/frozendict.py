@@ -3,7 +3,7 @@ from copy import deepcopy
 
 
 class FrozenDict(collections.abc.Mapping):
-    """ Based on frozen dict implementation from https://stackoverflow.com/a/2704866 by Mike Graham """
+    """Based on frozen dict implementation from https://stackoverflow.com/a/2704866 by Mike Graham"""
 
     def __init__(self, *args, **kwargs):
         self._d = dict(*args, **kwargs)
