@@ -1,3 +1,14 @@
 [tool.black]
 line-length = 130
 target_version = ['py37']
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
+
+[tool.pyright]
+include = ["profane"]
+exclude = ["**/__pycache__"]
+reportMissingImports = true
+reportMissingTypeStubs = false
