@@ -119,9 +119,10 @@ class Dependency:
 
 class ModuleBase:
     """Base class for profane modules.
+    Config options may be provided in `config` and in `kwargs`. If they conflict, `kwargs` gets precedence.
     Module construction proceeds as follows:
-    1) Any config options not present in `config` are filled in with their default values. Config options and their defaults are specified in the `config_spec` class attribute.
-    2) Any dependencies declared in the `dependencies` class attribute are recursively instantiated. If the dependency object is present in `provide`, this object will be used instead of instantiating a new object for the dependency.
+    1) Any config options not present in `config` or `kwargs` are filled in with their default values. Config options and their defaults are specified in the `config_spec` class attribute.
+    2) Any dependencies declared in the `dependencies` class attribute are recursively instantiated. However, when a dependency object is encountered that is present in `provide`, the object in `provide` will be used directly instead of instantiating a new object.
     3) The module object's `config` variable is updated to reflect the configs of its dependencies and then frozen.
 
     After construction is complete, the module's dependencies are available as instance variables: self.`dependency key`.
@@ -129,7 +130,8 @@ class ModuleBase:
     Args:
         config: dictionary containing a config to apply to this module and its dependencies
         provide: dictionary mapping dependency keys to module objects
-        share_objects: if true, dependencies will be cached in the registry based on their configs and reused. However, this module itself will not be cached; use `ModuleBase.create` to cache both the module and its dependencies.
+        share_objects: if true, dependencies will be cached in the registry based on their configs and reused. However, this module itself will not be cached; use `ModuleBase.create` to cache both the module and its dependencies
+        kwargs: config keys to apply to this module, which take precedence over those passed in with the `config` arg
     """
 
     config_spec = []
@@ -243,7 +245,7 @@ class ModuleBase:
 
     @classmethod
     def compute_config(cls, provide=None, config=None):
-        """Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account. """
+        """Return this module class' effective config after taking the module's defaults, `config`, and `provide` into account."""
         return cls(config=config, provide=provide, share_objects=False).config
 
     def __init__(self, provide=None, config=None, share_objects=False, build=True, **kwargs):
