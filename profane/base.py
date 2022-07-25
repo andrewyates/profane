@@ -46,7 +46,7 @@ class ModuleRegistry:
 
         module_type_registry = self.registry.setdefault(cls.module_type, {})
 
-        # do we already have a different entry for this module_type and module_name?
+        # warn if we already have a different entry for this module_type and module_name
         if module_type_registry.get(cls.module_name, cls) != cls:
             logger.warning(f"replacing entry {module_type_registry[cls.module_name]} for {cls.module_name} with {cls}")
 
